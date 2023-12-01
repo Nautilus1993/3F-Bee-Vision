@@ -1,0 +1,5 @@
+pyyaml
+twisted
+opencv-python
+protobuf
+redis
