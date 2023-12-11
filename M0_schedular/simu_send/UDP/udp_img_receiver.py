@@ -5,6 +5,8 @@ import struct
 import time
 import datetime
 import numpy as np
+import redis
+import base64
 
 # 接收端的IP地址和端口号
 RECV_IP = '192.168.31.17'
@@ -14,8 +16,10 @@ CHUNK_SIZE = 1024
 HEADER_SIZE = 10 # TODO：暂时只加包序号调通代码
 UDP_FORMAT = "!HII1024s"    # UDP包格式
 
-# 图像大小
+# 图像大小(按实际情况调整)
 IMAGE_SIZE = 6621914 # 图片大小 6M.png
+HEIGHT = 3456
+WIDTH = 2048
 
 # 收到图片存放位置
 img_dir = 'received_images/'
@@ -49,9 +53,20 @@ def timer(func):
     return wrapper
 
 # 将图片数据存入文件
-# TODO: 将接收到的图片数据和元信息写入文件，并发送给redis
 def process_image(image_data):
-    filename = os.path.join(img_dir, generate_image_name())
+    # TODO: 文件名改为从UDP包中读取
+    image_name = generate_image_name()
+    # 转为Numpy bytes
+    image_array = np.frombuffer(image_data, dtype=np.uint8) 
+    encoded_img = base64.b64encode(image_array).decode('utf-8')    # serialize
+    # 发送Redis
+    message = {
+        'name': image_name,
+        'data': encoded_img
+    }
+    conn.publish("topic.img", str(message))   
+    # 存储到文件 
+    filename = os.path.join(img_dir, image_name)
     with open(filename, 'wb') as file:
         file.write(image_data)
 
@@ -81,9 +96,8 @@ def receive_image(image_size, buffer_size):
 
         # 如果是最后一帧，判断目前是否收到所有的包；若完整收到一幅图，组包存储为图片文件
         if chunk_seq == (chunk_sum - 1):
-            print(" === 接收到最后一包 === ")
             if len(received_packets) == chunk_sum:
-                print("已接收到所有分片共 " + str(len(received_packets)) + " 个")
+                # print("已接收到所有分片共 " + str(len(received_packets)) + " 个")
                 # Concatenate the packets in the correct order
                 sorted_packets = [received_packets[i] for i in range(chunk_sum)]
                 image_data = b''.join(sorted_packets)
@@ -100,6 +114,7 @@ def receive_image(image_size, buffer_size):
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)    
 # 绑定IP地址和端口号
 sock.bind((RECV_IP, RECV_PORT))
+conn = redis.Redis(host='127.0.0.1', port=6379)
 
 while(True):
     try:
