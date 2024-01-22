@@ -1,0 +1,48 @@
+version: '3'
+
+services:
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    container_name: M0_redis
+  
+  image_receiver:
+    image: orin_nano_messenger:20240122
+    runtime: nvidia
+    network_mode: "host"
+    container_name: M0_image_receiver
+    command: /usr/src/deploy/run_receiver.sh
+    volumes:
+      - $DEV_WORKSPACE/M0_schedular/simu_send/:/usr/src/app/
+      - $DEVOPS_WORKSPACE/M0/:/usr/src/deploy/
+    
+  result_sender:
+    image: orin_nano_messenger:20240122
+    runtime: nvidia
+    network_mode: "host"
+    container_name: M0_result_sender
+    command: /usr/src/deploy/run_sender.sh
+    volumes:
+      - $DEV_WORKSPACE/M0_schedular/simu_send/:/usr/src/app/
+      - $DEVOPS_WORKSPACE/M0/:/usr/src/deploy/
+    
+  quality:
+    image: orin_nano_yolov5:20231128
+    runtime: nvidia
+    network_mode: "host"
+    container_name: M1_quality
+    command: /usr/src/deploy/run.sh
+    volumes:
+      - $DEV_WORKSPACE/M1_quality/:/usr/src/app/
+      - $DEVOPS_WORKSPACE/M1/:/usr/src/deploy/
+
+  yolov5:
+    image: orin_nano_yolov5:20231128
+    runtime: nvidia
+    network_mode: "host"
+    container_name: M2_detect
+    command: /usr/src/deploy/run.sh
+    volumes:
+      - $DEV_WORKSPACE/M2_detect/:/usr/src/app/
+      - $DEVOPS_WORKSPACE/M2/:/usr/src/deploy/
