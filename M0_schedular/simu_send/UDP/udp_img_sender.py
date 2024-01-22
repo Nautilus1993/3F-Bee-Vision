@@ -1,33 +1,19 @@
 import cv2
+import sys
 import socket
-import struct
+# import struct
 import os
 import time
 import logging
 
-"""
-Header: 暂时只加包序号调通代码
-Byte[0:1]   有效数据长度,最后一包分片有效长度与图片大小有关 
-Byte[2:5]   包总数
-Byte[6:9]   包序号
-Byte[10:N]  数据域固定1024bytes
-"""
+# Add the parent directory to the sys.path list
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(parent_dir)
+from utils.image_utils import pack_udp_packet, LOGGER,IP_ADDRESS
 
-# 发送端的IP地址和端口号
-# TODO:改为配置文件
-SEND_IP = '192.168.31.17'
 SEND_PORT = 8089
-IMAGE_SIZE = 6621914        # 图片大小 6M.png
 CHUNK_SIZE = 1024           # 图片分片长度
-UDP_FORMAT = "!HII1024s"    # UDP包格式
 
-# 在图片数据帧头包裹一层header
-def pack_udp_packet(chunk_sum, chunk_seq, image_chunk):
-    # 补全数据域为1024定长
-    byte_array = bytearray(b'0' * 1024)
-    byte_array[:len(image_chunk)] = image_chunk
-    udp_packet = struct.pack(UDP_FORMAT, len(image_chunk), chunk_sum, chunk_seq, bytes(byte_array))
-    return udp_packet
 
 def send_image(filename, server_ip, server_port, chunk_size):
     # 创建UDP套接字
@@ -51,11 +37,10 @@ def send_image(filename, server_ip, server_port, chunk_size):
         # 发送UDP帧
         udp_packet = pack_udp_packet(chunk_sum, i, image_chunk)
         sock.sendto(udp_packet, (server_ip, server_port))
-        # print(f"发送第 {i} / {chunk_sum} 个分片，分片大小 {len(image_chunk)} bytes")
         sent_chunks += 1
     
     # 输出发送图片结束时的日志：分片数量，文件大小
-    print("已发送分片数: " + str(sent_chunks))
+    LOGGER.info("已发送分片数: " + str(sent_chunks))
         
     #关闭文件
     file.close()
@@ -64,11 +49,29 @@ def send_image(filename, server_ip, server_port, chunk_size):
     sock.close()
 
 # 图像文件路径
-img_file = './6M.png'
+img_512 = './test_images/512.bmp' # 512 * 512
+img_1024 = './test_images/1024.bmp' # 1024 * 1024
+        
+def send_4_images(img_file):
+    count = [1,2,3,4]
+    for i in count:
+        LOGGER.info(f"准备发送第{i}张图" )
+        send_image(img_file, IP_ADDRESS, SEND_PORT, CHUNK_SIZE)
+    time.sleep(1)
 
-# 模拟1s发一张图
-while(True):
-    # img_list = sorted(os.listdir(img_dir))
-    # for img_name in img_list:
-    send_image(img_file, SEND_IP, SEND_PORT, CHUNK_SIZE)
-    time.sleep(3)
+def send_512():
+    send_4_images(img_512)
+
+def send_1024():
+    send_4_images(img_1024)
+
+def main():
+    counter = 0
+    while counter < 100:
+        # send_1024()
+        send_image(img_1024, IP_ADDRESS, SEND_PORT, CHUNK_SIZE)
+        time.sleep(1)
+        counter += 1
+
+if __name__ == '__main__':
+    main()

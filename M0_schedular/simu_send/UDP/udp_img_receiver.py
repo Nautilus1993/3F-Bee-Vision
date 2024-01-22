@@ -7,31 +7,23 @@ import datetime
 import numpy as np
 import redis
 import base64
+import sys
+
+# Add the parent directory to the sys.path list
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(parent_dir)
+from utils.image_utils import unpack_udp_packet, LOGGER, CHUNK_SIZE, HEADER_SIZE, IP_ADDRESS
 
 # 接收端的IP地址和端口号
-RECV_IP = '192.168.31.17'
 RECV_PORT = 8089
-# 数据分片大小
-CHUNK_SIZE = 1024
-HEADER_SIZE = 10 # TODO：暂时只加包序号调通代码
-UDP_FORMAT = "!HII1024s"    # UDP包格式
+
+# UDP_FORMAT = "!HII1024s"    # UDP包格式
 
 # 图像大小(按实际情况调整)
-IMAGE_SIZE = 6621914 # 图片大小 6M.png
-HEIGHT = 3456
-WIDTH = 2048
+IMAGE_SIZE = 263222 # 图片大小 000030.bmp
 
-# 收到图片存放位置
-img_dir = 'received_images/'
-
-# 解析UDP包，返回包头信息和数据有效部分
-def unpack_udp_packet(udp_packet):
-    effect_len, \
-    chunk_sum, \
-    chunk_seq, \
-    image_chunk \
-    = struct.unpack(UDP_FORMAT, udp_packet)
-    return chunk_sum, chunk_seq, image_chunk[:effect_len]
+# 收到图片存放位置(和程序在同一路径下)
+img_dir = os.path.dirname(os.path.abspath(__file__)) + "/received_images/"
 
 # 用当前时间命名图像数据
 def generate_image_name():
@@ -39,18 +31,6 @@ def generate_image_name():
     time_string = current_time.strftime("%Y-%m-%d_%H-%M-%S")
     file_name = f"file_{time_string}.png"
     return file_name
-
-def timer(func):
-    def wrapper(*args, **kwargs):
-        start_time = time.perf_counter() 
-        result = func(*args, **kwargs)
-        end_time = time.perf_counter() 
-        elapsed_time = end_time - start_time
-        print(f"开始时间的毫秒计数：{start_time}")
-        print(f"结束时间的毫秒计数：{end_time}")
-        print(f"函数 {func.__name__} 的执行时间为：{elapsed_time} 秒")
-        return result
-    return wrapper
 
 # 将图片数据存入文件
 def process_image(image_data):
@@ -70,8 +50,7 @@ def process_image(image_data):
     with open(filename, 'wb') as file:
         file.write(image_data)
 
-# @timer
-def receive_image(image_size, buffer_size):
+def receive_image(buffer_size):
     # 以包序号为key存储UDP包中的有效数据
     received_packets = {}
     received_chunks = 0
@@ -97,7 +76,7 @@ def receive_image(image_size, buffer_size):
         # 如果是最后一帧，判断目前是否收到所有的包；若完整收到一幅图，组包存储为图片文件
         if chunk_seq == (chunk_sum - 1):
             if len(received_packets) == chunk_sum:
-                # print("已接收到所有分片共 " + str(len(received_packets)) + " 个")
+                print("已接收到所有分片共 " + str(len(received_packets)) + " 个")
                 # Concatenate the packets in the correct order
                 sorted_packets = [received_packets[i] for i in range(chunk_sum)]
                 image_data = b''.join(sorted_packets)
@@ -113,14 +92,15 @@ def receive_image(image_size, buffer_size):
 # 创建UDP套接字
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)    
 # 绑定IP地址和端口号
-sock.bind((RECV_IP, RECV_PORT))
+sock.bind((IP_ADDRESS, RECV_PORT))
 conn = redis.Redis(host='127.0.0.1', port=6379)
 
 while(True):
+    print("start server")
     try:
         # buffer_size: UDP包的大小，每次接收定长的UDP包
         buffer_size = HEADER_SIZE + CHUNK_SIZE
-        receive_image(IMAGE_SIZE, buffer_size)
+        receive_image(buffer_size)
 
     except socket.error as e:
         # 没有数据可读，错误码为 EWOULDBLOCK 或 EAGAIN

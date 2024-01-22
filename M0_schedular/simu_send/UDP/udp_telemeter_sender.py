@@ -3,15 +3,19 @@ import struct
 import json
 import redis
 import time
+import os
+import sys
 
+# Add the parent directory to the sys.path list
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(parent_dir)
+from utils.image_utils import LOGGER, IP_ADDRESS
 
 # 发送端的IP地址和端口号
-# TODO:改为转发板IP和端口号
-SERVER_IP = '192.168.31.17'
 SERVER_PORT = 8090
 
 # 加载遥测数据格式配置文件
-config_file = "/home/ywang/Documents/3F-Bee-Vision/M0_schedular/simu_send/UDP/telemeter_data_config.json"
+config_file = os.path.dirname(os.path.realpath(__file__)) + "/telemeter_data_config.json"
 
 # Redis
 conn = redis.Redis(host='127.0.0.1', port=6379)
@@ -64,7 +68,7 @@ def send_telemetering_data(server_ip, server_port):
     bbox_h = round(bbox[3])
     bbox_conf = round(bbox[4])
     bbox_class = round(bbox[5])
-    print("From redis get result of image: " + image_name)
+    LOGGER.info("From redis get result of image: " + image_name)
 
     # 发送UDP包
     udp_packet = pack_udp_packet(time_s, time_ms, bbox_class, bbox_x, bbox_y)
@@ -77,7 +81,7 @@ def send_telemetering_data(server_ip, server_port):
 # 模拟1s发一个遥测包
 def main():
     while True:
-        send_telemetering_data(SERVER_IP, SERVER_PORT)
+        send_telemetering_data(IP_ADDRESS, SERVER_PORT)
         time.sleep(1)
 
 if __name__=="__main__":
