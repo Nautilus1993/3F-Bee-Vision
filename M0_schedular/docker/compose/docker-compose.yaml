@@ -6,12 +6,17 @@ services:
     ports:
       - "6379:6379"
     container_name: M0_redis
+    healthcheck:
+      test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
   
   image_receiver:
     image: orin_nano_messenger:20240122
     runtime: nvidia
     network_mode: "host"
     container_name: M0_image_receiver
+    depends_on:
+      redis:
+        condition: service_healthy
     command: /usr/src/deploy/run_receiver.sh
     volumes:
       - $DEV_WORKSPACE/M0_schedular/simu_send/:/usr/src/app/
@@ -22,6 +27,9 @@ services:
     runtime: nvidia
     network_mode: "host"
     container_name: M0_result_sender
+    depends_on:
+      redis:
+        condition: service_healthy
     command: /usr/src/deploy/run_sender.sh
     volumes:
       - $DEV_WORKSPACE/M0_schedular/simu_send/:/usr/src/app/
