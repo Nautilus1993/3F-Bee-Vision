@@ -1,4 +1,3 @@
-import cv2
 import sys
 import socket
 # import struct
@@ -57,7 +56,8 @@ def send_4_images(img_file):
     for i in count:
         LOGGER.info(f"准备发送第{i}张图" )
         send_image(img_file, IP_ADDRESS, SEND_PORT, CHUNK_SIZE)
-    time.sleep(1)
+        time.sleep(0.2)
+
 
 def send_512():
     send_4_images(img_512)
@@ -69,9 +69,10 @@ def main():
     counter = 0
     while counter < 100:
         # send_1024()
-        send_image(img_1024, IP_ADDRESS, SEND_PORT, CHUNK_SIZE)
-        time.sleep(1)
+        # send_image(img_1024, IP_ADDRESS, SEND_PORT, CHUNK_SIZE)
+        send_1024()
         counter += 1
+        time.sleep(0.05)
 
 if __name__ == '__main__':
     main()

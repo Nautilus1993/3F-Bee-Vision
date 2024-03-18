@@ -46,9 +46,9 @@ def process_image(image_data):
     }
     conn.publish("topic.img", str(message))   
     # 存储到文件 
-    filename = os.path.join(img_dir, image_name)
-    with open(filename, 'wb') as file:
-        file.write(image_data)
+    # filename = os.path.join(img_dir, image_name)
+    # with open(filename, 'wb') as file:
+    #     file.write(image_data)
 
 def receive_image(buffer_size):
     # 以包序号为key存储UDP包中的有效数据

@@ -19,10 +19,10 @@ def receive_datagrams(sock, data_queue):
 
 def process_datagrams(data_queue):
     counter = 0
-    while True:       
-        if not data_queue.empty():
+    while True:    
+        while not data_queue.empty():
             data, addr = data_queue.get() 
-            chunk_sum, chunk_seq, image_chunk = unpack_udp_packet(data)
+            chunk_sum, chunk_seq, image_chunk = unpack_udp_packet(data)  
             counter = check_image_receiving_status(counter, chunk_sum, chunk_seq)
             # 根据当前处理数据包的信息，更新计数器并打印接收进度
             # counter = check_image_receiving_status(counter, chunk_sum, chunk_seq)

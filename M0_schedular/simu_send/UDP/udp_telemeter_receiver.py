@@ -1,4 +1,4 @@
-from udp_telemeter_sender import SERVER_IP, SERVER_PORT, UDP_FORMAT
+from udp_telemeter_sender import SERVER_PORT, UDP_FORMAT
 from twisted.internet import reactor
 from twisted.internet.protocol import DatagramProtocol
 import struct

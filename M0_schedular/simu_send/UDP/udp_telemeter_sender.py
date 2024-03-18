@@ -17,9 +17,6 @@ SERVER_PORT = 8090
 # 加载遥测数据格式配置文件
 config_file = os.path.dirname(os.path.realpath(__file__)) + "/telemeter_data_config.json"
 
-# Redis
-conn = redis.Redis(host='127.0.0.1', port=6379)
-
 # Generate format string based on the configuration
 def generate_udp_format(config_file):
     with open(config_file, "r") as config_file:
@@ -45,10 +42,11 @@ UDP_FORMAT = generate_udp_format(config_file)
 def get_result_from_redis():
     # Read the value of the key
     key = 'sat_bbox_det'
-    data = conn.lrange(key, 0, -1)
-    bbox = [float(value.decode()) for value in data[0:-1]]
-    image_name = data[-1].decode()
-    return image_name, bbox
+    if data := conn.lrange(key, 0, -1):
+        bbox = [float(value.decode()) for value in data[0:-1]]
+        image_name = data[-1].decode()
+        return image_name, bbox
+    return "No Image Received", [0, 0, 0, 0, 0, 0]
 
 def pack_udp_packet(time_s, time_ms, target_class, x, y):
     udp_packet = struct.pack(UDP_FORMAT, time_s, time_ms, target_class, x, y)
@@ -79,6 +77,7 @@ def send_telemetering_data(server_ip, server_port):
     sock.close()
 
 # 模拟1s发一个遥测包
+conn = redis.Redis(host='127.0.0.1', port=6379)
 def main():
     while True:
         send_telemetering_data(IP_ADDRESS, SERVER_PORT)
