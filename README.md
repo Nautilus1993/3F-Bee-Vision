@@ -15,6 +15,11 @@ export DEVOPS_WORKSPACE=/home/ywang/Documents/3F-Bee-Vision/M0_schedular/docker/
 ```bash
 cd $DEVOPS_WORKSPACE
 docker compose up
+
+# 在与上游调通之前，需要启动模拟发图程序
+cd /home/ywang/Documents/3F-Bee-Vision/M0_schedular/simu_send/UDP
+conda activate yolo
+python udp_img_sender.py
 ```
 
 2. 启动单个服务
