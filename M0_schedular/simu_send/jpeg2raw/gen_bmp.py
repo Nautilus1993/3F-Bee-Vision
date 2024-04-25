@@ -13,9 +13,9 @@ def jpg2bmp(image_file):
 
 def resize_bmp(image_file):
     original_image = Image.open(image_file)
-    resized_image = original_image.resize((1024,1024))
-    resized_image.save("1024.bmp")
-# 调整亮度
+    resized_image = original_image.resize((2048,2048))
+    resized_image.save("2048.bmp")
+
 
 resize_bmp(image_bmp)
 # jpg2bmp(image_file)

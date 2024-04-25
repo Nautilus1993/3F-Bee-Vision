@@ -6,11 +6,9 @@ import time
 import logging
 
 # Add the parent directory to the sys.path list
-parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(parent_dir)
 from utils.image_utils import pack_udp_packet, LOGGER,IP_ADDRESS
 
-SEND_PORT = 8089
+SEND_PORT = 8090
 CHUNK_SIZE = 1024           # 图片分片长度
 
 
@@ -26,15 +24,27 @@ def send_image(filename, server_ip, server_port, chunk_size):
     image_size = os.path.getsize(filename)
     chunk_sum = (image_size + chunk_size - 1) // chunk_size
 
+    # 获取时间戳
+    timestamp = time.time()
+    time_s = int(timestamp)
+    time_ms = int((timestamp - time_s) * 1000)
+
     # 发送图像分片
     sent_chunks = 0
     for i in range(chunk_sum):
+        # 获取图片分片
         start = i * chunk_size
         end = min((i + 1) * chunk_size, image_size)
         image_chunk = image_data[start:end]
         
         # 发送UDP帧
-        udp_packet = pack_udp_packet(chunk_sum, i, image_chunk)
+        udp_packet = pack_udp_packet(
+            time_s, 
+            time_ms, 
+            chunk_sum, 
+            i, 
+            image_chunk
+        )
         sock.sendto(udp_packet, (server_ip, server_port))
         sent_chunks += 1
     
@@ -50,6 +60,8 @@ def send_image(filename, server_ip, server_port, chunk_size):
 # 图像文件路径
 img_512 = './test_images/512.bmp' # 512 * 512
 img_1024 = './test_images/1024.bmp' # 1024 * 1024
+img_2048 = './test_images/2048.bmp' # 2048 * 2048
+img_tiff = './camera/1.tiff' 
         
 def send_4_images(img_file):
     count = [1,2,3,4]
@@ -58,10 +70,6 @@ def send_4_images(img_file):
         send_image(img_file, IP_ADDRESS, SEND_PORT, CHUNK_SIZE)
         time.sleep(0.2)
 
-
-def send_512():
-    send_4_images(img_512)
-
 def send_1024():
     send_4_images(img_1024)
 
@@ -69,10 +77,9 @@ def main():
     counter = 0
     while counter < 100:
         # send_1024()
-        # send_image(img_1024, IP_ADDRESS, SEND_PORT, CHUNK_SIZE)
-        send_1024()
+        send_image(img_2048, IP_ADDRESS, SEND_PORT, CHUNK_SIZE)
         counter += 1
-        time.sleep(0.05)
+        time.sleep(0.2)
 
 if __name__ == '__main__':
     main()

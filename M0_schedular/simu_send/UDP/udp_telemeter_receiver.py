@@ -9,7 +9,7 @@ import sys
 # Add the parent directory to the sys.path list
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(parent_dir)
-from utils.image_utils import LOGGER
+from M0_schedular.simu_send.utils.image_utils import LOGGER
 
 def unpack_udp_packet(udp_packet):
     time_s, time_ms, bbox_class, bbox_x, bbox_y \

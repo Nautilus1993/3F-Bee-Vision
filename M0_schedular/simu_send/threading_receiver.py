@@ -2,8 +2,8 @@ import socket
 import threading
 import queue
 
-from utils.image_utils import unpack_udp_packet, check_image_receiving_status
-from utils.image_utils import LOGGER, CHUNK_SIZE, HEADER_SIZE, IP_ADDRESS
+from M0_schedular.simu_send.UDP.utils.image_utils import unpack_udp_packet, check_image_receiving_status
+from M0_schedular.simu_send.UDP.utils.image_utils import LOGGER, CHUNK_SIZE, HEADER_SIZE, IP_ADDRESS
 
 BUFFER_SIZE = HEADER_SIZE + CHUNK_SIZE
 

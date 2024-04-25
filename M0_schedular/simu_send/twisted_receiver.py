@@ -8,8 +8,8 @@ import sys
 # Add the parent directory to the sys.path list
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(parent_dir)
-from utils.image_utils import unpack_udp_packet, check_image_receiving_status
-from utils.image_utils import LOGGER, CHUNK_SIZE, HEADER_SIZE, IP_ADDRESS
+from M0_schedular.simu_send.UDP.utils.image_utils import unpack_udp_packet, check_image_receiving_status
+from M0_schedular.simu_send.UDP.utils.image_utils import LOGGER, CHUNK_SIZE, HEADER_SIZE, IP_ADDRESS
 
 
 class UDPImageProtocol(DatagramProtocol):

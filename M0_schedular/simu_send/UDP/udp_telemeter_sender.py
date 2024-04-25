@@ -7,9 +7,7 @@ import os
 import sys
 
 # Add the parent directory to the sys.path list
-parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(parent_dir)
-from utils.image_utils import LOGGER, IP_ADDRESS
+from M0_schedular.simu_send.utils.image_utils import LOGGER, IP_ADDRESS
 
 # 发送端的IP地址和端口号
 SERVER_PORT = 8090
@@ -38,7 +36,7 @@ def generate_udp_format(config_file):
     return format_string
 UDP_FORMAT = generate_udp_format(config_file)
 
-# 收集redis中的yolo识别结果并返回给
+# 收集redis中的yolo识别结果并返回
 def get_result_from_redis():
     # Read the value of the key
     key = 'sat_bbox_det'
