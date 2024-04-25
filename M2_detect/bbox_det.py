@@ -12,6 +12,8 @@ import logging
 from logging import handlers
 import base64
 
+# 000
+
 
 def inference(img_grey):
     """输入灰度图，输出检测结果
