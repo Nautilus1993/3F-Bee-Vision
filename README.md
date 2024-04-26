@@ -35,3 +35,9 @@ docker compose up [service_name]
 cd $DEVOPS_WORKSPACE
 docker compose down
 ```
+
+4. 其他
+```bash
+python detect.py
+```
+
