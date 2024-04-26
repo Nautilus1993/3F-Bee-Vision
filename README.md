@@ -38,6 +38,6 @@ docker compose down
 
 4. 其他
 ```bash
-python detect.py
+python detect.py --weights runs/train/exp66/weights/best.pt --source ../datasets/bee_yolo/images/test2017/ --device 0 --save-txt
 ```
 
