@@ -1,0 +1,60 @@
+{
+    "schema": "Telemeter",
+    "fields": [
+        {
+            "name": "counter_telemeter", 
+            "type": "uint8",
+            "description": "输出计数器"
+        },
+        {
+            "name": "counter_instruction", 
+            "type": "uint8",
+            "description": "指令计数器"
+        },
+        {
+            "name": "state_instruction", 
+            "type": "uint8",
+            "description": "指令状态码"
+        },
+        {
+            "name": "state_computer", 
+            "type": "uint8",
+            "description": "AI计算机状态码"
+        },
+        {
+            "name": "state_instruction", 
+            "type": "uint8",
+            "description": "图像接收状态码"
+        },
+        {
+            "name": "time_s", 
+            "type": "uint32",
+            "description": "数据包时间戳秒"
+        },
+        {
+            "name": "time_ms",
+            "type": "uint16",
+            "description": "数据包时间戳毫秒"
+        },
+        {
+            "name": "target_1_class",
+            "type": "uint8",
+            "description": "目标1类别"
+        },
+        {
+            "name": "target_1_angular_vertical",
+            "type": "uint16",
+            "description": "目标1俯仰角"
+        },
+        {
+            "name": "target_1_angular_horizon",
+            "type": "uint16",
+            "description": "目标1偏航角"
+        },
+        {
+            "name": "target_1_confidence",
+            "type": "float",
+            "description": "目标1置信度"
+        }
+    ]
+}
