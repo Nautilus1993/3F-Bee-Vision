@@ -71,8 +71,8 @@ def pack_udp_packet(time_s, time_ms, chunk_sum, chunk_seq, image_chunk):
 def unpack_udp_packet(udp_packet):
     effect_len, _, _, \
     time_s, time_ms, _, \
-    _, win_x, win_y, \
-    chunk_sum, chunk_seq, image_chunk \
+    chunk_sum, chunk_seq, _, \
+    win_x, win_y, image_chunk \
     = struct.unpack(UDP_FORMAT, udp_packet)
     return time_s, time_ms, win_x, win_y, chunk_sum, chunk_seq, image_chunk[:effect_len]
 

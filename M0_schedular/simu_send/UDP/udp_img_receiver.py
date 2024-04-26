@@ -1,17 +1,9 @@
 import cv2
-import os
 import socket
-import struct
-import time
-import datetime
-import numpy as np
-import redis
-import base64
-import sys
 
-from utils.image_utils import unpack_udp_packet, process_image, LOGGER
-from utils.image_utils import CHUNK_SIZE, HEADER_SIZE, IMAGE_SIZE
-from utils.image_utils import IP_ADDRESS, RECV_PORT
+from utils.share import LOGGER, IP_ADDRESS
+from utils.image_utils import unpack_udp_packet, process_image
+from utils.image_utils import CHUNK_SIZE, HEADER_SIZE, RECV_PORT
 
 def receive_image(buffer_size):
     # 以包序号为key存储UDP包中的有效数据

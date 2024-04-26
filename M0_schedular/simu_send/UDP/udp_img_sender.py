@@ -6,7 +6,8 @@ import time
 import logging
 
 # Add the parent directory to the sys.path list
-from utils.image_utils import pack_udp_packet, LOGGER,IP_ADDRESS
+from utils.share import LOGGER, IP_ADDRESS
+from utils.image_utils import pack_udp_packet
 
 SEND_PORT = 8090
 CHUNK_SIZE = 1024           # 图片分片长度
@@ -36,7 +37,6 @@ def send_image(filename, server_ip, server_port, chunk_size):
         start = i * chunk_size
         end = min((i + 1) * chunk_size, image_size)
         image_chunk = image_data[start:end]
-        
         # 发送UDP帧
         udp_packet = pack_udp_packet(
             time_s, 
