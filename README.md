@@ -40,5 +40,8 @@ docker compose down
 ```bash
 # 目标检测输出检测框txt
 python detect.py --weights runs/train/exp66/weights/best.pt --source ../datasets/bee_yolo/images/test2017/ --device 0 --save-txt
+
+# 各类别中心点精度评定，注意修改路径
+python precision_center.py
 ```
 
