@@ -1,6 +1,7 @@
 import struct
 import redis
 import time
+import os
 from .share import generate_udp_format
 
 # 发送端的IP地址和端口号
@@ -11,7 +12,7 @@ REDIS = redis.Redis(host='127.0.0.1', port=6379)
 TOPIC_RESULT = 'sat_bbox_det'
 
 # 加载遥测数据格式配置文件,生成UDP包格式
-config_file = "telemeter_data_config.json"
+config_file = os.path.relpath(__file__) + "telemeter_data_config.json"
 TELEMETER_UDP_FORMAT = generate_udp_format(config_file)
 
 """

@@ -19,8 +19,7 @@ ch.setFormatter(formatter)
 LOGGER.addHandler(ch)
 
 # 接收端的IP地址和端口号
-RECV_PORT = 8090
-IP_ADDRESS = '192.168.29.201'
+RECV_PORT = 8089
 
 # 存储
 REDIS = redis.Redis(host='127.0.0.1', port=6379)
@@ -92,3 +91,17 @@ def process_image(image_data, time_s, time_ms, win_x, win_y):
     # 存储到文件 
     # with open(os.path.join(IMAGE_DIR, image_name), 'wb') as file:
     #     file.write(image_data)
+
+# 将收到的图片发给redis并存储为文件
+def process_image_test(image_data, time_s, time_ms, win_x, win_y):
+    # timestamp
+    current_time = time.time()
+    time_s = int(current_time)
+    time_ms = int((current_time - time_s) * 1000)
+
+    image_name = f"image_{time_s}_{time_ms}.png"
+    # 转为Numpy bytes
+    image_matrix = np.frombuffer(image_data, dtype=np.uint8)
+    image_matrix.resize(2048, 2048)
+    # 存储到文件 
+    # cv2.imwrite(os.path.join(IMAGE_DIR, image_name), image_matrix)

@@ -2,7 +2,7 @@ import cv2
 import socket
 
 from utils.share import LOGGER, IP_ADDRESS
-from utils.image_utils import unpack_udp_packet, process_image
+from utils.image_utils import unpack_udp_packet, process_image_test
 from utils.image_utils import CHUNK_SIZE, HEADER_SIZE, RECV_PORT
 
 def receive_image(buffer_size):
@@ -20,7 +20,6 @@ def receive_image(buffer_size):
         chunk_sum, \
         chunk_seq, \
         image_chunk = unpack_udp_packet(udp_packet)
-        # print(f"接收到编号 {chunk_seq} 的分片，分片大小 {len(image_chunk)} bytes")
 
         # 收到第一帧
         if chunk_seq == 0:
@@ -42,7 +41,7 @@ def receive_image(buffer_size):
                 sorted_packets = [received_packets[i] for i in range(chunk_sum)]
                 image_data = b''.join(sorted_packets)
                 # 将图像名，图像时间戳，开窗位置返回给redis
-                process_image(image_data, time_s, time_ms, win_x, win_y)
+                process_image_test(image_data, time_s, time_ms, win_x, win_y)
                 LOGGER.info(f"图片file_{time_s}_{time_ms}写入redis, 共接收{len(received_packets)}个分片")
                 received_packets = {}
             else:
@@ -58,7 +57,7 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.bind((IP_ADDRESS, RECV_PORT))
 
 while(True):
-    LOGGER.info("开始接收图片...")
+    LOGGER.info(IP_ADDRESS + " : " + str(RECV_PORT) + "  开始接收图片...")
     try:
         # buffer_size: UDP包的大小，每次接收定长的UDP包
         buffer_size = HEADER_SIZE + CHUNK_SIZE

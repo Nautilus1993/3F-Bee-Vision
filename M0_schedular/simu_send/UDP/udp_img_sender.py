@@ -9,7 +9,7 @@ import logging
 from utils.share import LOGGER, IP_ADDRESS
 from utils.image_utils import pack_udp_packet
 
-SEND_PORT = 8090
+SEND_PORT = 8089
 CHUNK_SIZE = 1024           # 图片分片长度
 
 
