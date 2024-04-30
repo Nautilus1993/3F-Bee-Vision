@@ -146,7 +146,8 @@ for item in sub.listen():
         encoded_img = message_dict['data']
         img_data = base64.b64decode(encoded_img)
         nparr = np.frombuffer(img_data, np.uint8)
-        img = cv2.imdecode(nparr, 0)  # 0 represents grayscale
+        img = np.resize(nparr,(2048, 2048))
+        # img = cv2.imdecode(nparr, 0)  # 0 represents grayscale      
         # 得到检测边界框
         sat_bbox = inference(img)    # x,y,w,h,p,c
         # 输出结果发送

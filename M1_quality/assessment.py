@@ -22,8 +22,10 @@ for item in sub.listen():
         img_name = message_dict['name']
         encoded_img = message_dict['data']
         img_data = base64.b64decode(encoded_img)
+        # nparr = np.frombuffer(img_data, np.uint8)
+        # img = cv2.imdecode(nparr, 0)  # 0 represents grayscale
         nparr = np.frombuffer(img_data, np.uint8)
-        img = cv2.imdecode(nparr, 0)  # 0 represents grayscale
+        img = np.resize(nparr,(2048, 2048))
 
         # 图像评估
         img_mean_value = img_mean(img)

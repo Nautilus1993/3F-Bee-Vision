@@ -12,8 +12,9 @@ REDIS = redis.Redis(host='127.0.0.1', port=6379)
 TOPIC_RESULT = 'sat_bbox_det'
 
 # 加载遥测数据格式配置文件,生成UDP包格式
-config_file = os.path.relpath(__file__) + "telemeter_data_config.json"
-TELEMETER_UDP_FORMAT = generate_udp_format(config_file)
+config_file = "telemeter_data_config.json"
+config_file_path = os.path.dirname(__file__) + "/" + config_file
+TELEMETER_UDP_FORMAT = generate_udp_format(config_file_path)
 
 """
     软件状态码: 

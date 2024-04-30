@@ -101,7 +101,15 @@ def process_image_test(image_data, time_s, time_ms, win_x, win_y):
 
     image_name = f"image_{time_s}_{time_ms}.png"
     # 转为Numpy bytes
-    image_matrix = np.frombuffer(image_data, dtype=np.uint8)
-    image_matrix.resize(2048, 2048)
+    image_array = np.frombuffer(image_data, dtype=np.uint8)
+    encoded_img = base64.b64encode(image_array).decode('utf-8')    # serialize
+    # 发送Redis
+    message = {
+        'name': image_name,
+        'window': [win_x, win_y],
+        'data': encoded_img
+    }
+    REDIS.publish("topic.img", str(message))  
+    # image_matrix.resize(2048, 2048)
     # 存储到文件 
     # cv2.imwrite(os.path.join(IMAGE_DIR, image_name), image_matrix)
