@@ -14,7 +14,6 @@ import base64
 
 # 000
 
-
 def inference(img_grey):
     """输入灰度图，输出检测结果
     Args:
@@ -45,7 +44,7 @@ def inference(img_grey):
     for i, p in enumerate(pred):
         if p[4] > max_probability:
             max_probability = p[4]
-            best_bbox = pred[i]
+            best_bbox = pred[i]     # 640*640下的坐标
     sat_bbox = []
     if len(pred) > 0:
         if img_w >= img_h:
@@ -95,7 +94,8 @@ def inference(img_grey):
 def pub_result(sat_bbox,img_name):
     # Define the key and list of values
     key = 'sat_bbox_det'
-    sat_bbox.append(img_name)    # x,y,w,h,p,c,name
+    # sat_bbox.append(img_name)    # x,y,w,h,p,c,name
+    sat_bbox.append(img_name)    # c, angle_pitch, angle_azimuth, p, name
     values = sat_bbox
     # print(values)
     # Set the key with the list value
@@ -104,6 +104,8 @@ def pub_result(sat_bbox,img_name):
 
 # config
 weights = os.path.dirname(os.path.realpath(__file__)) + "/pt/02bv5.pt"
+fl = 4648.540   # camera focal length
+camera_center = [1024, 1024]    # 原图大小：2048*2048
 visualization = 0    # 0不可视化，1可视化
 device = select_device('')
 model = attempt_load(weights, device=device)
@@ -142,17 +144,54 @@ for item in sub.listen():
         # 收到图像数据解析
         message_data = item['data']
         message_dict = eval(message_data)  # Convert the string message back to a dictionary
+
+        """message info:
+        message = {
+            'name': image_name,
+            'win_size': 0x00,
+            'window': [win_x, win_y],
+            'data': encoded_img
+        }
+        """
         img_name = message_dict['name']
+        win_size = message_dict['win_size']
+        [win_x, win_y] = message_dict['window']   # left-down corner
         encoded_img = message_dict['data']
         img_data = base64.b64decode(encoded_img)
         nparr = np.frombuffer(img_data, np.uint8)
         img = np.resize(nparr,(2048, 2048))
+
+        # 根据窗口大小裁剪图像
+        win_img = img[win_x - win_size + 1 : win_x, win_y : win_y + win_size]
+
         # img = cv2.imdecode(nparr, 0)  # 0 represents grayscale      
         # 得到检测边界框
-        sat_bbox = inference(img)    # x,y,w,h,p,c
+        sat_bbox = inference(win_img)    # x,y,w,h,p,c
+
+        # 得到检测框中心在窗口中的坐标
+        sat_bbox_center = [sat_bbox[0]+sat_bbox[2]/2, sat_bbox[1]+sat_bbox[3]/2]
+
+        # 计算检测框中心坐标在全图中的坐标
+        sat_bbox_center[0] = sat_bbox_center[0] + win_x - win_size + 1
+        sat_bbox_center[1] = sat_bbox_center[1] + win_y
+
+        # 计算相机中心与检测框中心的偏移角度
+        dx = camera_center[0] - sat_bbox_center[0]  # x方向偏移量，大于0仰视
+        dy = sat_bbox_center[1] - camera_center[1]  # y方向偏移量，大于0右侧
+
+        angle_pitch = np.arctan(dx/fl) * 180 / np.pi    # 俯仰角，俯视为负， -90~90
+        angle_azimuth = np.arctan(dy/fl) * 180 / np.pi  # 方位角，左侧为负， -180~180（这个角度是不是有问题）
+
+
         # 输出结果发送
         print(img_name)
-        pub_result(sat_bbox,img_name)    # pub by redis key sat_bbox_det, x,y,w,h,p,c,name
+        # pub_result(sat_bbox,img_name)    # pub by redis key sat_bbox_det, x,y,w,h,p,c,name
+
+        prob = sat_bbox[4]
+        catagory = sat_bbox[5]
+        pub_result([catagory, angle_pitch, angle_azimuth, prob], img_name)    # pub by redis key c, angle_pitch, angle_azimuth, p, name
+        
+        
         # 日志记录检测框和耗时
         logger.info("sat_bbox: {}".format(sat_bbox))
         logger.info("time_consuming: {:.4f} s".format(time.time()-start_time))
