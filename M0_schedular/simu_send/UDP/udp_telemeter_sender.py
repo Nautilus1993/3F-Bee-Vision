@@ -5,12 +5,10 @@ import redis
 import time
 import os
 
-from utils.share import LOGGER, IP_ADDRESS
+from utils.share import LOGGER, IP_ADDRESS, get_timestamps
 from utils.telemeter_utils import SERVER_PORT
 from utils.telemeter_utils import \
-    fake_result_from_redis, \
-    get_timestamps, \
-    pack_udp_packet
+    fake_result_from_redis, pack_udp_packet
     
 
 def send_telemetering_data(counter, server_ip, server_port):

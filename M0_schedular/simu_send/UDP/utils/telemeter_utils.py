@@ -2,7 +2,7 @@ import struct
 import redis
 import time
 import os
-from .share import generate_udp_format
+from .share import generate_udp_format, get_timestamps
 
 # 发送端的IP地址和端口号
 SERVER_PORT = 8090
@@ -12,7 +12,7 @@ REDIS = redis.Redis(host='127.0.0.1', port=6379)
 TOPIC_RESULT = 'sat_bbox_det'
 
 # 加载遥测数据格式配置文件,生成UDP包格式
-config_file = "telemeter_data_config.json"
+config_file = "telemeter_config.json"
 config_file_path = os.path.dirname(__file__) + "/" + config_file
 TELEMETER_UDP_FORMAT = generate_udp_format(config_file_path)
 
@@ -25,19 +25,6 @@ TELEMETER_UDP_FORMAT = generate_udp_format(config_file_path)
 # TODO: 返回上一条执行的指令，增加状态监控逻辑
 def fake_states():
     return 0xFF, 0x00, 0x00
-
-"""
-    时间戳：
-    1. 组包时间。
-    2. 图片接收时间。
-    3. 图片完整到达时间   
-"""
-# TODO: 增加图片时间(redis读取)和图像到达时间逻辑
-def get_timestamps():
-    current_time = time.time()
-    time_s = int(current_time)
-    time_ms = int((current_time - time_s) * 1000)
-    return time_s, time_ms
 
 def fake_timestamps():
     time_s, time_ms = get_timestamps()

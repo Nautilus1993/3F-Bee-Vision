@@ -1,5 +1,6 @@
 import logging
 import json
+import time
 
 # 日志输出到控制台
 LOGGER = logging.getLogger(__name__)
@@ -11,7 +12,7 @@ ch.setFormatter(formatter)
 LOGGER.addHandler(ch)
 
 # TODO:本机IP，需要按实际情况修改
-IP_ADDRESS = '192.168.0.101'
+IP_ADDRESS = '127.0.0.1'
 
 # 根据配置文件生成UDP打包格式
 def generate_udp_format(config_file):
@@ -32,3 +33,10 @@ def generate_udp_format(config_file):
             length = field['length']
             format_string += str(length) + 's'
     return format_string
+
+# 生成星上时格式的时间戳
+def get_timestamps():
+    current_time = time.time()
+    time_s = int(current_time)
+    time_ms = int((current_time - time_s) * 1000)
+    return time_s, time_ms
