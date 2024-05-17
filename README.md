@@ -44,4 +44,6 @@ python detect.py --weights runs/train/exp66/weights/best.pt --source ../datasets
 # 各类别中心点精度评定，注意修改路径
 python precision_center.py
 ```
-
+# 参考文档
+【腾讯文档】蜂星通信协议-图像模块
+https://docs.qq.com/smartsheet/DYkFiTmlrcW1vRFhY?tab=t0z3os
