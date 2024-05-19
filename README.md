@@ -1,17 +1,53 @@
 # 3F-Bee-Vision
 小蜜蜂项目视觉定位软件
-M0: 调度系统
-M1: 图像质量检测
-M2: 目标识别
+* M0: 调度系统
+* M1: 图像质量检测
+* M2: 目标识别
+
+项目平台jetson orin nano
+
+# Quick Start
+## 环境配置
+### docker安装
+https://docs.docker.com/desktop/install/archlinux/
+安装aarch64版本的docker
+https://github.com/docker/compose/releases/ 安装aarch64版本的docker compose
 
 本项目通过docker compose管理各个服务，需要在运行的主机上配置下面环境变量(编辑 ~/.bashrc)：
+```bash
+export DEV_WORKSPACE=/home/user_name/Documents/3F-Bee-Vision
+export DEVOPS_WORKSPACE=/home/user_name/Documents/3F-Bee-Vision/M0_schedular/docker/compose
 ```
-export DEV_WORKSPACE=/home/ywang/Documents/3F-Bee-Vision
-export DEVOPS_WORKSPACE=/home/ywang/Documents/3F-Bee-Vision/M0_schedular/docker/compose
+添加docker到用户组
+```bash
+sudo groupadd docker
 ```
+添加当前用户到docker用户组
+```bash
+sudo usermod -aG docker username
+```
+### 构建镜像
+一共需要三个镜像
+1. redis:latest 
+   可以在docker compose自动拉取，可能需要登录docker hub
+   ```bash
+   docker login -u username -p password
+   ```
+2. orin_nano_messenger:20240122
+   ```bash
+   cd $DEV_WPRKSPACE/M0_schedular/docker/scheduler
+   docker build -t orin_nano_messenger:20240122 .
+   ```
+3. orin_nano_yolov5:20231128
+   ```bash
+   cd $DEV_WPRKSPACE/M0_schedular/docker/yolov5-gpu
+   docker build -t orin_nano_yolov5:20231128 .
+   ```
+
+
+### 启动服务
 
 1. 启动所有服务
-
 ```bash
 cd $DEVOPS_WORKSPACE
 docker compose up
@@ -27,6 +63,12 @@ python udp_img_sender.py
 ```bash
 cd $DEVOPS_WORKSPACE
 docker compose up [service_name]
+# service_name:
+# 1. redis                      
+# 2. image_receiver             depends on：redis
+# 3. result_sender              depends on：redis
+# 4. quality                    
+# 5. yolov5
 ```
 
 3. 关闭服务
@@ -44,6 +86,3 @@ python detect.py --weights runs/train/exp66/weights/best.pt --source ../datasets
 # 各类别中心点精度评定，注意修改路径
 python precision_center.py
 ```
-# 参考文档
-【腾讯文档】蜂星通信协议-图像模块
-https://docs.qq.com/smartsheet/DYkFiTmlrcW1vRFhY?tab=t0z3os
