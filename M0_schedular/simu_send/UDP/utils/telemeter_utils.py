@@ -35,7 +35,8 @@ def fake_timestamps():
 """
 # TODO: 把bbox换为角度
 def get_result_from_redis():
-    if data := REDIS.lrange(TOPIC_RESULT, 0, -1):
+    if REDIS.lrange(TOPIC_RESULT, 0, -1):
+        data = REDIS.lrange(TOPIC_RESULT, 0, -1)
         bbox = [float(value.decode()) for value in data[0:-1]]
         image_name = data[-1].decode()
         return image_name, bbox
