@@ -93,11 +93,11 @@ def inference(img_grey):
 
 def pub_result(sat_bbox,img_name):
     # Define the key and list of values
-    key = 'sat_bbox_det'
-    # sat_bbox.append(img_name)    # x,y,w,h,p,c,name
-    sat_bbox.append(img_name)    # c, angle_pitch, angle_azimuth, p, name
+    key = 'sat_angle_det'
+    sat_bbox.append(img_name)    # category, angle_pitch, angle_azimuth, p, name
     values = sat_bbox
-    # print(values)
+    print(values)
+    print('Successfully published the result to the Redis server')
     # Set the key with the list value
     conn.delete(key)  # Optional: Delete the key if it already exists
     conn.rpush(key, *values)
@@ -106,6 +106,7 @@ def pub_result(sat_bbox,img_name):
 weights = os.path.dirname(os.path.realpath(__file__)) + "/pt/02bv5.pt"
 fl = 4648.540   # camera focal length
 camera_center = [1024, 1024]    # 原图大小：2048*2048
+img_size = 2048
 visualization = 0    # 0不可视化，1可视化
 device = select_device('')
 model = attempt_load(weights, device=device)
@@ -154,27 +155,28 @@ for item in sub.listen():
         }
         """
         img_name = message_dict['name']
-        win_size = message_dict['win_size']
-        [win_x, win_y] = message_dict['window']   # left-down corner. 问题：如果不开窗的话，[win_x, win_y]不是应该是[2047, 0]吗？
+        win_size = message_dict['win_size'][0]
+        [win_x, win_y] = message_dict['window']   # 开窗坐标系以左下角为原点
         encoded_img = message_dict['data']
         img_data = base64.b64decode(encoded_img)
         nparr = np.frombuffer(img_data, np.uint8)
-        img = np.resize(nparr,(2048, 2048))
+        img = np.resize(nparr,(img_size, img_size))
 
         # 根据窗口大小裁剪图像
         win_img = img[win_x - win_size + 1 : win_x, win_y : win_y + win_size]
+        left_up_corner = [img_size + win_x - win_size, win_y]   # 开窗的左上角在原图中的坐标
+        win_img = img[left_up_corner[0] : left_up_corner[0] + win_size, left_up_corner[1] : left_up_corner[1] + win_size]
 
         # img = cv2.imdecode(nparr, 0)  # 0 represents grayscale      
         # 得到检测边界框
         sat_bbox = inference(win_img)    # x,y,w,h,p,c
 
         # 得到检测框中心在窗口中的坐标
-        # sat_bbox_center = [sat_bbox[0]+sat_bbox[2]/2, sat_bbox[1]+sat_bbox[3]/2]
         sat_bbox_center = [sat_bbox[1]+sat_bbox[3]/2, sat_bbox[0]+sat_bbox[2]/2] 
 
         # 计算检测框中心坐标在全图中的坐标
-        sat_bbox_center[0] = sat_bbox_center[0] + win_x - win_size + 1
-        sat_bbox_center[1] = sat_bbox_center[1] + win_y
+        sat_bbox_center[0] = sat_bbox_center[0] + left_up_corner[0]
+        sat_bbox_center[1] = sat_bbox_center[1] + left_up_corner[1]
 
         # 计算相机中心与检测框中心的偏移角度
         dh = camera_center[0] - sat_bbox_center[0]  # h方向偏移量，大于0仰视
@@ -186,11 +188,10 @@ for item in sub.listen():
 
         # 输出结果发送
         print(img_name)
-        # pub_result(sat_bbox,img_name)    # pub by redis key sat_bbox_det, x,y,w,h,p,c,name
 
         prob = sat_bbox[4]
         catagory = sat_bbox[5]
-        pub_result([catagory, angle_pitch, angle_azimuth, prob], img_name)    # pub by redis key c, angle_pitch, angle_azimuth, p, name
+        pub_result([catagory, angle_pitch, angle_azimuth, prob], img_name)    # pub by redis key category, angle_pitch, angle_azimuth, p, name
         
         
         # 日志记录检测框和耗时
