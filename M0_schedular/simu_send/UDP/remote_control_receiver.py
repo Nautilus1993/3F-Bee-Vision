@@ -2,13 +2,19 @@ import socket
 
 from utils.share import LOGGER, IP_ADDRESS
 from utils.remote_control_utils import SERVER_PORT, Instruction, \
-unpack_udp_packet
+unpack_udp_packet, write_instruction_to_redis
 
 def receive_instruction(buffer_size):
+    counter = 0
     while True:
         udp_packet, addr = sock.recvfrom(buffer_size)
         time_s, time_ms, instruction = unpack_udp_packet(udp_packet)
-        LOGGER.info(f"收到遥控指令：{Instruction(instruction).name} 指令码 {hex(instruction)}")
+        LOGGER.info(f"收到遥控指令：{Instruction(instruction).name} 指令码 {hex(instruction)} 计数器：{counter}")
+        write_instruction_to_redis(instruction, time_s, time_ms, counter)
+        counter += 1
+        if counter >= 256:
+            LOGGER("计数器清零")
+            counter= 0
 
 # 创建UDP套接字
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)    

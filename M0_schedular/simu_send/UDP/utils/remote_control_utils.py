@@ -1,6 +1,7 @@
 import struct
 import redis
 import os
+import json
 from enum import Enum
 from .share import generate_udp_format, get_timestamps
 
@@ -9,6 +10,8 @@ SERVER_PORT = 10090
 
 # REDIS
 REDIS = redis.Redis(host='127.0.0.1', port=6379)
+TOPIC_INSTRUCTION = 'topic.remote_control'
+BUFFER_SIZE = 10 # redis中最多缓存的指令数量
 
 # 加载遥测数据格式配置文件,生成UDP包格式
 config_file = "remote_control_config.json"
@@ -55,3 +58,25 @@ def unpack_udp_packet(udp_packet):
     time_s, time_ms, instruction, \
     _, _, _ = struct.unpack(REMOTE_CONTROL_UDP_FORMAT, udp_packet)
     return time_s, time_ms, instruction
+
+#收到的指令写入redis 
+def write_instruction_to_redis(instruction, time_s, time_ms, counter):
+    message = {
+        'instruction_code': hex(instruction),
+        'instruction_name': Instruction(instruction).name,
+        'time_s': time_s,
+        'time_ms': time_ms,
+        'counter': counter
+    }
+    print("write to redis" + str(message))
+    REDIS.rpush(TOPIC_INSTRUCTION, json.dumps(message))
+    # 判断是否已经达到指令缓存数量上限
+    if REDIS.llen(TOPIC_INSTRUCTION) > BUFFER_SIZE:
+        REDIS.lpop(TOPIC_INSTRUCTION)
+
+def read_instruction_from_redis():
+    last_element = REDIS.lindex(TOPIC_INSTRUCTION, -1)
+    if last_element is not None:
+        return last_element.decode()
+    else:
+        return None

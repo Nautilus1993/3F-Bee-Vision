@@ -5,11 +5,14 @@ import json
 import redis
 import time
 import os
+import concurrent.futures
 
 from utils.share import LOGGER, IP_ADDRESS, get_timestamps
 from utils.telemeter_utils import SERVER_PORT
 from utils.telemeter_utils import \
     fake_result_from_redis, pack_udp_packet
+from utils.remote_control_utils import read_instruction_from_redis
+
 
 SERIAL_PORT = '/dev/ttyXRUSB1'
 BRATE = 115200    
@@ -21,18 +24,26 @@ def packup_telemetering_data(counter):
     # 2. yolo识别结果
     # TODO(wangyuhang):换成redis中的真实数据
     image_name, t1, t2, t3 = fake_result_from_redis()
-    LOGGER.info("From redis get result of image: " + image_name)
+    # LOGGER.info("From redis get result of image: " + image_name)
 
+    # 3. 上一条指令
+    json_string = read_instruction_from_redis()
+    last_instruction = json.loads(json_string)
+    ins_counter = last_instruction['counter']
+    ins_code = last_instruction['instruction_code']
+
+    # 发送UDP包
     # 组装遥测帧
     telemeter_data = pack_udp_packet(
         counter,
-        0,
+        ins_counter,
         time_s,             
         time_ms,            
         t1,         
         t2,             
         t3              
     )
+    print(telemeter_data)
     return telemeter_data
 
 

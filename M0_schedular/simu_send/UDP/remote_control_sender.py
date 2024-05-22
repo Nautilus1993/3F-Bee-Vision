@@ -27,7 +27,7 @@ def send_remote_control_data(instruction):
     sock.close()
 
 def main():
-    instruction = Instruction.APP_STATE.value
+    instruction = Instruction.DOWNLOAD_IMG.value
     send_remote_control_data(instruction)
 
 if __name__=="__main__":
