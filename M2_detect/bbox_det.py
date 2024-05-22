@@ -164,7 +164,8 @@ for item in sub.listen():
 
         # 根据窗口大小裁剪图像
         win_img = img[win_x - win_size + 1 : win_x, win_y : win_y + win_size]
-        left_up_corner = [img_size + win_x - win_size, win_y]   # 开窗的左上角在原图中的坐标
+        # left_up_corner = [img_size + win_x - win_size, win_y]   # 开窗的左上角在原图中的坐标
+        left_up_corner = [img_size + win_y - win_size, win_x]   # 开窗的左上角在原图中的坐标
         win_img = img[left_up_corner[0] : left_up_corner[0] + win_size, left_up_corner[1] : left_up_corner[1] + win_size]
 
         # img = cv2.imdecode(nparr, 0)  # 0 represents grayscale      
