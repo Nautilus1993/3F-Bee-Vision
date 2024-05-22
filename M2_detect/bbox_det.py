@@ -15,11 +15,11 @@ import base64
 # 000
 
 def inference(img_grey):
-    """输入灰度图，输出检测结果
+    """输入灰度图，输出相机的俯仰角和方位角
     Args:
         img_grey:灰度图矩阵
     Returns:
-        sat_bbox:[left， top， weight, height, probability, class]
+        sat_bbox: [class, angle_pitch, angle_azimuth, probability, name]
     """
     img_h = img_grey.shape[0]
     img_w = img_grey.shape[1]
@@ -56,11 +56,11 @@ def inference(img_grey):
             result_h = 640
             result_w = result_h / rate_hw
 
-        sat_bbox.append(best_bbox[0] / result_w * img_w)    # left
+        sat_bbox.append(best_bbox[0] / result_w * img_w)    # left  投影回开窗原尺寸的坐标
         sat_bbox.append(best_bbox[1] / result_h * img_h)    # top
         sat_bbox.append(best_bbox[2] / result_w * img_w)    # right
         sat_bbox.append(best_bbox[3] / result_h * img_h)    # down
-        sat_bbox.append(best_bbox[4])    # p
+        sat_bbox.append(best_bbox[4])    # probability
         sat_bbox.append(best_bbox[5])    # category
 
         # 边界保护
@@ -73,7 +73,7 @@ def inference(img_grey):
         if sat_bbox[3] > img_h:
             sat_bbox[3] = img_h
 
-        # 输出成x,y,w,h,p,c格式
+        # 输出成x,y,w,h,p,c格式     问题：这里的x，y是左上角的坐标还是中心坐标？
         bbox_w = sat_bbox[2] - sat_bbox[0]
         bbox_h = sat_bbox[3] - sat_bbox[1]
         sat_bbox[2] = bbox_w
@@ -148,14 +148,14 @@ for item in sub.listen():
         """message info:
         message = {
             'name': image_name,
-            'win_size': 0x00,
+            'win_size': (2048, 2048),
             'window': [win_x, win_y],
             'data': encoded_img
         }
         """
         img_name = message_dict['name']
         win_size = message_dict['win_size']
-        [win_x, win_y] = message_dict['window']   # left-down corner
+        [win_x, win_y] = message_dict['window']   # left-down corner. 问题：如果不开窗的话，[win_x, win_y]不是应该是[2047, 0]吗？
         encoded_img = message_dict['data']
         img_data = base64.b64decode(encoded_img)
         nparr = np.frombuffer(img_data, np.uint8)
@@ -169,18 +169,19 @@ for item in sub.listen():
         sat_bbox = inference(win_img)    # x,y,w,h,p,c
 
         # 得到检测框中心在窗口中的坐标
-        sat_bbox_center = [sat_bbox[0]+sat_bbox[2]/2, sat_bbox[1]+sat_bbox[3]/2]
+        # sat_bbox_center = [sat_bbox[0]+sat_bbox[2]/2, sat_bbox[1]+sat_bbox[3]/2]
+        sat_bbox_center = [sat_bbox[1]+sat_bbox[3]/2, sat_bbox[0]+sat_bbox[2]/2] 
 
         # 计算检测框中心坐标在全图中的坐标
         sat_bbox_center[0] = sat_bbox_center[0] + win_x - win_size + 1
         sat_bbox_center[1] = sat_bbox_center[1] + win_y
 
         # 计算相机中心与检测框中心的偏移角度
-        dx = camera_center[0] - sat_bbox_center[0]  # x方向偏移量，大于0仰视
-        dy = sat_bbox_center[1] - camera_center[1]  # y方向偏移量，大于0右侧
+        dh = camera_center[0] - sat_bbox_center[0]  # h方向偏移量，大于0仰视
+        dw = sat_bbox_center[1] - camera_center[1]  # w方向偏移量，大于0右侧
 
-        angle_pitch = np.arctan(dx/fl) * 180 / np.pi    # 俯仰角，俯视为负， -90~90
-        angle_azimuth = np.arctan(dy/fl) * 180 / np.pi  # 方位角，左侧为负， -180~180（这个角度是不是有问题）
+        angle_pitch = np.arctan(dh/fl) * 180 / np.pi    # 俯仰角，俯视为负， -90~90
+        angle_azimuth = np.arctan(dw/fl) * 180 / np.pi  # 方位角，左侧为负， -180~180
 
 
         # 输出结果发送
