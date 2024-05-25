@@ -19,7 +19,7 @@ ch.setFormatter(formatter)
 LOGGER.addHandler(ch)
 
 # 接收端的IP地址和端口号
-RECV_PORT = 8089
+RECV_PORT = 18089
 
 # 存储
 REDIS = redis.Redis(host='127.0.0.1', port=6379)
@@ -84,6 +84,7 @@ def process_image(image_data, time_s, time_ms, win_x, win_y):
     # 发送Redis
     message = {
         'name': image_name,
+        'win_size': (2048, 2048),
         'window': [win_x, win_y],
         'data': encoded_img
     }
@@ -101,7 +102,8 @@ def process_image_test(image_data, time_s, time_ms, win_x, win_y):
 
     image_name = f"image_{time_s}_{time_ms}.png"
     # 转为Numpy bytes
-    image_array = np.frombuffer(image_data, dtype=np.uint8)
+    # image_array = np.frombuffer(image_data, dtype=np.uint8)
+    image_array = np.frombuffer(image_data, dtype=np.uint16)
     encoded_img = base64.b64encode(image_array).decode('utf-8')    # serialize
     # 发送Redis
     message = {
@@ -110,7 +112,7 @@ def process_image_test(image_data, time_s, time_ms, win_x, win_y):
         'window': [win_x, win_y],
         'data': encoded_img
     }
-    REDIS.publish("topic.img", str(message))  
-    # image_matrix.resize(2048, 2048)
+    # REDIS.publish("topic.img", str(message))  
+    image_array.resize(512, 512)
     # 存储到文件 
-    # cv2.imwrite(os.path.join(IMAGE_DIR, image_name), image_matrix)
+    cv2.imwrite(os.path.join(IMAGE_DIR, image_name), image_array)
