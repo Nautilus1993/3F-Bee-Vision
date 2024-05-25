@@ -155,7 +155,8 @@ for item in sub.listen():
         }
         """
         img_name = message_dict['name']
-        win_size = message_dict['win_size'][0]
+        # win_size = message_dict['win_size'][0]    # message_dict好像没有win_size这个属性，因此下面用了定值
+        win_size = 2048
         [win_x, win_y] = message_dict['window']   # 开窗坐标系以左下角为原点
         encoded_img = message_dict['data']
         img_data = base64.b64decode(encoded_img)
