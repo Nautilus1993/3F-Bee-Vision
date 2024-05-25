@@ -106,6 +106,7 @@ def process_image_test(image_data, time_s, time_ms, win_x, win_y):
     # 发送Redis
     message = {
         'name': image_name,
+        'win_size': (2048, 2048),
         'window': [win_x, win_y],
         'data': encoded_img
     }
