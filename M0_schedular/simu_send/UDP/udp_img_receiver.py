@@ -2,7 +2,7 @@ import cv2
 import socket
 
 from utils.share import LOGGER, IP_ADDRESS
-from utils.image_utils import unpack_udp_packet, process_image_test
+from utils.image_utils import unpack_udp_packet, process_image_test, process_image
 from utils.image_utils import CHUNK_SIZE, HEADER_SIZE, RECV_PORT
 
 def receive_image(buffer_size):

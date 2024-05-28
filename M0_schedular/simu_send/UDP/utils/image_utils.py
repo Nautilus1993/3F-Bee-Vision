@@ -93,26 +93,35 @@ def process_image(image_data, time_s, time_ms, win_x, win_y):
     # with open(os.path.join(IMAGE_DIR, image_name), 'wb') as file:
     #     file.write(image_data)
 
+def write_to_bytes(bytes_string, file_name):
+    file_path = os.path.join(IMAGE_DIR, file_name)
+    with open(file_path, 'wb') as file:
+        file.write(bytes_string)
+
+
 # 将收到的图片发给redis并存储为文件
 def process_image_test(image_data, time_s, time_ms, win_x, win_y):
     # timestamp
     current_time = time.time()
     time_s = int(current_time)
     time_ms = int((current_time - time_s) * 1000)
-
-    image_name = f"image_{time_s}_{time_ms}.png"
+    image_name = f"image_{time_s}_{time_ms}.bmp"
     # 转为Numpy bytes
     # image_array = np.frombuffer(image_data, dtype=np.uint8)
     image_array = np.frombuffer(image_data, dtype=np.uint16)
-    encoded_img = base64.b64encode(image_array).decode('utf-8')    # serialize
+    # encoded_img = base64.b64encode(image_array).decode('utf-8')    # serialize
+    image_array.resize(512, 512)
+    normed = cv2.normalize(image_array, dst=None, alpha=0, beta=65535, norm_type=cv2.NORM_MINMAX)
+    encoded_img = base64.b64encode(normed).decode('utf-8')    # serialize
     # 发送Redis
     message = {
         'name': image_name,
-        'win_size': (2048, 2048),
+        'win_size': (512, 512),
         'window': [win_x, win_y],
         'data': encoded_img
     }
-    # REDIS.publish("topic.img", str(message))  
-    image_array.resize(512, 512)
+    REDIS.publish("topic.img", str(message)) 
     # 存储到文件 
-    cv2.imwrite(os.path.join(IMAGE_DIR, image_name), image_array)
+    cv2.imwrite(os.path.join(IMAGE_DIR, image_name), normed)
+    # txt_name = f"image_{time_s}_{time_ms}.txt"
+    # write_to_bytes(image_data, txt_name)
