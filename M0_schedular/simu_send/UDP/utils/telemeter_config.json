@@ -55,6 +55,21 @@
             "name": "target_1_confidence",
             "type": "float",
             "description": "目标1置信度"
+        },
+        {
+            "name": "cpu_usage",
+            "type": "uint8",
+            "description": "CPU占用率"
+        },
+        {
+            "name": "disk_usage",
+            "type": "uint8",
+            "description": "磁盘占用率"
+        },
+        {
+            "name": "memory_usage",
+            "type": "uint8",
+            "description": "内存占用率"
         }
     ]
 }

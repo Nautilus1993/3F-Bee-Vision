@@ -11,7 +11,7 @@ services:
       test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
   
   image_receiver:
-    image: orin_nano_messenger:20240525
+    image: orin_nano_messenger:20240603
     runtime: nvidia
     network_mode: "host"
     container_name: M0_image_receiver
@@ -24,7 +24,7 @@ services:
       - $DEVOPS_WORKSPACE/M0/:/usr/src/deploy/
     
   result_sender:
-    image: orin_nano_messenger:20240525
+    image: orin_nano_messenger:20240603
     runtime: nvidia
     network_mode: "host"
     container_name: M0_result_sender

@@ -1,6 +1,7 @@
 import logging
 import json
 import time
+import struct
 
 # 日志输出到控制台
 LOGGER = logging.getLogger(__name__)
@@ -40,3 +41,43 @@ def get_timestamps():
     time_s = int(current_time)
     time_ms = int((current_time - time_s) * 1000)
     return time_s, time_ms
+
+# 根据json配置文件，显示udp包里面每个字段的内容
+def format_udp_packet(packet, config_file):
+    format_string = generate_udp_format(config_file)
+    try:
+        # 使用 struct.unpack() 函数解包数据
+        field_values = struct.unpack(format_string, packet)
+    except struct.error as e:
+        LOGGER.error(f"UDP包解析错误，包内容与格式不符：{ format_string }")
+        return
+    # 加载config文件
+    with open(config_file, "r") as config_file:
+        config = json.load(config_file)
+    field_configs = config['fields'] # 返回一个list
+    # 判断字段个数和config文件一致
+    if len(field_values) != len(field_configs):
+        LOGGER.error("UDP包字段个数与config文件不符")
+        return
+    
+    format_string = ""
+    for i in range(len(field_configs)):
+        value = field_values[i]
+        field = field_configs[i]
+        field_type = field['type']
+        field_info = field['description']
+        if field_type == 'uint8':
+            format_string += f"{field_info}:\t{value:d}\n"
+        elif field_type == 'uint16':
+            format_string += f"{field_info}:\t{value:d}\n"
+        elif field_type == 'uint32':
+            format_string += f"{field_info}:\t{value:d}\n"
+        elif field_type == 'float':
+            format_string += f"{field_info}:\t{value:.2f}\n"
+        elif field_type == 'string':
+            length = field['length']
+            if length <= 20:
+                format_string += f"{field_info}:\t{value}\n"
+            else:
+                format_string += f"{field_info}:\t{value[:20]} ...总长度 {len(value)}\n"
+    print(format_string)

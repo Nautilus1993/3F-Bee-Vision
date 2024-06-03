@@ -10,8 +10,9 @@ import concurrent.futures
 from utils.share import LOGGER, IP_ADDRESS, get_timestamps
 from utils.telemeter_utils import SERVER_PORT
 from utils.telemeter_utils import \
-    fake_result_from_redis, pack_udp_packet
+    fake_result_from_redis, get_result_from_redis, pack_udp_packet, format_telemeter
 from utils.remote_control_utils import read_instruction_from_redis
+from utils.system_usage import get_system_status
 
 
 SERIAL_PORT = '/dev/ttyXRUSB1'
@@ -32,18 +33,21 @@ def packup_telemetering_data(counter):
     ins_counter = last_instruction['counter']
     ins_code = last_instruction['instruction_code']
 
-    # 发送UDP包
+    # 4. 获取设备状态[cpu, disk, memory]
+    sys_status = get_system_status() 
+    if len(sys_status) != 3:
+        LOGGER.warning("系统状态返回值长度异常")
+
     # 组装遥测帧
     telemeter_data = pack_udp_packet(
         counter,
         ins_counter,
         time_s,             
         time_ms,            
-        t1,         
-        t2,             
-        t3              
+        t1,
+        sys_status          
     )
-    print(telemeter_data)
+    format_telemeter(telemeter_data)
     return telemeter_data
 
 

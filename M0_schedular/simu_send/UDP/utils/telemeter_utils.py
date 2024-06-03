@@ -2,7 +2,7 @@ import struct
 import redis
 import time
 import os
-from .share import generate_udp_format, get_timestamps
+from .share import generate_udp_format, get_timestamps, LOGGER, format_udp_packet
 
 # 发送端的IP地址和端口号
 SERVER_PORT = 8090
@@ -10,6 +10,7 @@ SERVER_PORT = 8090
 # REDIS
 REDIS = redis.Redis(host='127.0.0.1', port=6379)
 TOPIC_RESULT = 'sat_bbox_det'
+TOPIC_ANGLE = 'sat_angle_det'
 
 # 加载遥测数据格式配置文件,生成UDP包格式
 config_file = "telemeter_config.json"
@@ -55,7 +56,7 @@ def fake_result_from_redis():
 """
     UDP 解析和组包 
 """
-def pack_udp_packet(c1, c2, time_s, time_ms, t1, t2, t3):
+def pack_udp_packet(c1, c2, time_s, time_ms, t1, sys_status):
     states = fake_states()
     udp_packet = struct.pack(TELEMETER_UDP_FORMAT, 
         c1,                 # 3. 输出计数器
@@ -68,7 +69,10 @@ def pack_udp_packet(c1, c2, time_s, time_ms, t1, t2, t3):
         t1[0],              # 15. 目标1 识别结果
         t1[1],              # 16. 目标1 方位角
         t1[2],              # 17. 目标1 俯仰角
-        t1[3]               # 18. 目标1 置信度
+        t1[3],               # 18. 目标1 置信度
+        sys_status[0],      # 35. CPU占用率
+        sys_status[1],      # 36. 磁盘占用率
+        sys_status[2]       # 37. 内存占用率
     )
     return udp_packet
 
@@ -76,7 +80,11 @@ def unpack_udp_packet(udp_packet):
     counter_telemeter, counter_instruction, \
     state_instruction, state_computer, state_image, \
     time_s, time_ms, \
-    t1_class, t1_vertical, t1_horizon, t1_conf \
+    t1_class, t1_vertical, t1_horizon, t1_conf, \
+    cpu_usage, disk_usage, memory_usage \
         = struct.unpack(TELEMETER_UDP_FORMAT, udp_packet)
     return counter_telemeter, time_s, time_ms, \
         [t1_class, t1_vertical, t1_horizon, t1_conf]
+
+def format_telemeter(udp_packet):
+    format_udp_packet(udp_packet, config_file_path)
