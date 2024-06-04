@@ -29,9 +29,15 @@ def packup_telemetering_data(counter):
 
     # 3. 上一条指令
     json_string = read_instruction_from_redis()
-    last_instruction = json.loads(json_string)
-    ins_counter = last_instruction['counter']
-    ins_code = last_instruction['instruction_code']
+    try:
+        last_instruction = json.loads(json_string)
+        ins_counter = last_instruction['counter']
+        # 指令转为16进制数
+        ins_code = int(last_instruction['instruction_code'], 16)
+    except TypeError:
+        print("None")
+        ins_counter = 0
+        ins_code = 0x00
 
     # 4. 获取设备状态[cpu, disk, memory]
     sys_status = get_system_status() 
@@ -42,6 +48,7 @@ def packup_telemetering_data(counter):
     telemeter_data = pack_udp_packet(
         counter,
         ins_counter,
+        ins_code,
         time_s,             
         time_ms,            
         t1,

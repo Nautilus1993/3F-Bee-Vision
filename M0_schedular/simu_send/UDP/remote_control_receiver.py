@@ -9,10 +9,10 @@ def receive_instruction(buffer_size):
     while True:
         udp_packet, addr = sock.recvfrom(buffer_size)
         time_s, time_ms, instruction = unpack_udp_packet(udp_packet)
+        counter += 1
         LOGGER.info(f"收到遥控指令：{Instruction(instruction).name} 指令码 {hex(instruction)} 计数器：{counter}")
         write_instruction_to_redis(instruction, time_s, time_ms, counter)
-        counter += 1
-        if counter >= 256:
+        if counter >= 255:
             LOGGER("计数器清零")
             counter= 0
 

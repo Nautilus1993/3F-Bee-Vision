@@ -56,12 +56,12 @@ def fake_result_from_redis():
 """
     UDP 解析和组包 
 """
-def pack_udp_packet(c1, c2, time_s, time_ms, t1, sys_status):
+def pack_udp_packet(c1, c2, ins_code, time_s, time_ms, t1, sys_status):
     states = fake_states()
     udp_packet = struct.pack(TELEMETER_UDP_FORMAT, 
         c1,                 # 3. 输出计数器
         c2,                 # 4. 指令接收计数器
-        states[0],          # 5. 指令接收状态码
+        ins_code,           # 5. 指令接收状态码
         states[1],          # 6. AI计算机设备状态码
         states[2],          # 7. 图像接收状态码
         time_s,             # 8. 组包时间秒
@@ -69,7 +69,7 @@ def pack_udp_packet(c1, c2, time_s, time_ms, t1, sys_status):
         t1[0],              # 15. 目标1 识别结果
         t1[1],              # 16. 目标1 方位角
         t1[2],              # 17. 目标1 俯仰角
-        t1[3],               # 18. 目标1 置信度
+        t1[3],              # 18. 目标1 置信度
         sys_status[0],      # 35. CPU占用率
         sys_status[1],      # 36. 磁盘占用率
         sys_status[2]       # 37. 内存占用率

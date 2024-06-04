@@ -23,15 +23,28 @@ services:
       - $DEV_WORKSPACE/M0_schedular/simu_send/:/usr/src/app/
       - $DEVOPS_WORKSPACE/M0/:/usr/src/deploy/
     
-  result_sender:
+  telemeter:
     image: orin_nano_messenger:20240603
     runtime: nvidia
     network_mode: "host"
-    container_name: M0_result_sender
+    container_name: M0_telemeter
     depends_on:
       redis:
         condition: service_healthy
     command: /usr/src/deploy/run_sender.sh
+    volumes:
+      - $DEV_WORKSPACE/M0_schedular/simu_send/:/usr/src/app/
+      - $DEVOPS_WORKSPACE/M0/:/usr/src/deploy/
+    
+  remote_control:
+    image: orin_nano_messenger:20240603
+    runtime: nvidia
+    network_mode: "host"
+    container_name: M0_remote_control
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: /usr/src/deploy/run_remote_control.sh
     volumes:
       - $DEV_WORKSPACE/M0_schedular/simu_send/:/usr/src/app/
       - $DEVOPS_WORKSPACE/M0/:/usr/src/deploy/
