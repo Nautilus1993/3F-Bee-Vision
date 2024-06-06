@@ -17,9 +17,12 @@ import base64
 def inference(img_grey):
     """输入灰度图，输出相机的俯仰角和方位角
     Args:
-        img_grey:灰度图矩阵
+        img_grey : 灰度图矩阵
     Returns:
-        sat_bbox: [class, angle_pitch, angle_azimuth, probability, name]
+        sat_bboxes: [
+            [class, angle_pitch, angle_azimuth, probability, name]
+            [class, angle_pitch, angle_azimuth, probability, name]
+            [class, angle_pitch, angle_azimuth, probability, name]]
     """
     img_h = img_grey.shape[0]
     img_w = img_grey.shape[1]
@@ -38,14 +41,24 @@ def inference(img_grey):
     pred = model(img, augment=False, visualize=False)[0]
     pred = non_max_suppression(pred, conf_thres=0.25)
     pred = pred[0].cpu().numpy().tolist()
-    max_probability = 0.0
-
-    # 取置信度最高的一个检测框
+    
+    # TODO(xubo): 选取最多三个置信度最高的检测框
+    best_bboxes = []
+    probs = []
     for i, p in enumerate(pred):
-        if p[4] > max_probability:
-            max_probability = p[4]
-            best_bbox = pred[i]     # 640*640下的坐标
-    sat_bbox = []
+        probs.append(p[4])
+    probs.sort(reverse=True)
+    if len(probs) >= 3:
+        threshold_prob = probs[2]   # 如果检测出多于2个目标，只取置信度最高的三个
+    else:
+        threshold_prob = probs[-1]  # 如果检测出少于3个目标，则全部取出
+        
+    for i, p in enumerate(pred):
+        if p[4] > threshold_prob:
+            best_bboxes.append(pred[i]) # 640*640下的坐标
+
+    sat_bboxes = []
+
     if len(pred) > 0:
         if img_w >= img_h:
             rate_hw = float(img_w) / img_h
@@ -56,48 +69,55 @@ def inference(img_grey):
             result_h = 640
             result_w = result_h / rate_hw
 
-        sat_bbox.append(best_bbox[0] / result_w * img_w)    # left  投影回开窗原尺寸的坐标
-        sat_bbox.append(best_bbox[1] / result_h * img_h)    # top
-        sat_bbox.append(best_bbox[2] / result_w * img_w)    # right
-        sat_bbox.append(best_bbox[3] / result_h * img_h)    # down
-        sat_bbox.append(best_bbox[4])    # probability
-        sat_bbox.append(best_bbox[5])    # category
+        for best_bbox in best_bboxes:
+            sat_bbox = []
+            sat_bbox.append(best_bbox[0] / result_w * img_w)    # left  投影回开窗原尺寸的坐标
+            sat_bbox.append(best_bbox[1] / result_h * img_h)    # top
+            sat_bbox.append(best_bbox[2] / result_w * img_w)    # right
+            sat_bbox.append(best_bbox[3] / result_h * img_h)    # down
+            sat_bbox.append(best_bbox[4])    # probability
+            sat_bbox.append(best_bbox[5])    # category
 
-        # 边界保护
-        if sat_bbox[0] < 0:
-            sat_bbox[0] = 0
-        if sat_bbox[1] < 0:
-            sat_bbox[1] = 0
-        if sat_bbox[2] > img_w:
-            sat_bbox[2] = img_w
-        if sat_bbox[3] > img_h:
-            sat_bbox[3] = img_h
+            # 边界保护
+            if sat_bbox[0] < 0:
+                sat_bbox[0] = 0
+            if sat_bbox[1] < 0:
+                sat_bbox[1] = 0
+            if sat_bbox[2] > img_w:
+                sat_bbox[2] = img_w
+            if sat_bbox[3] > img_h:
+                sat_bbox[3] = img_h
 
-        # 输出成x,y,w,h,p,c格式     问题：这里的x，y是左上角的坐标还是中心坐标？
-        bbox_w = sat_bbox[2] - sat_bbox[0]
-        bbox_h = sat_bbox[3] - sat_bbox[1]
-        sat_bbox[2] = bbox_w
-        sat_bbox[3] = bbox_h
+            # 输出成x,y,w,h,p,c格式
+            bbox_w = sat_bbox[2] - sat_bbox[0]
+            bbox_h = sat_bbox[3] - sat_bbox[1]
+            sat_bbox[2] = bbox_w
+            sat_bbox[3] = bbox_h
+
+            sat_bboxes.append(sat_bbox)
     else:
         sat_bbox = [0, 0, 0, 0, 0, 0]    # 没有检测结果
+        sat_bboxes.append(sat_bbox)
 
     # save result
     img_grey = np.ascontiguousarray(img_grey)
-    cv2.rectangle(img_grey, (int(sat_bbox[0]), int(sat_bbox[1])), (int(sat_bbox[0]+sat_bbox[2]), int(sat_bbox[1]+sat_bbox[3])),
-                    color=(255, 255, 200), thickness=6)
+    for sat_bbox in sat_bboxes:
+        cv2.rectangle(img_grey, (int(sat_bbox[0]), int(sat_bbox[1])), (int(sat_bbox[0]+sat_bbox[2]), int(sat_bbox[1]+sat_bbox[3])),
+                        color=(255, 255, 200), thickness=6)
     cv2.imwrite(output_dir+img_name, img_grey)
     if visualization:
         cv2.imshow('img', img_grey)
         cv2.waitKey(1)
-    return sat_bbox
+    return sat_bboxes
 
-def pub_result(sat_bbox,img_name):
+def pub_result(sat_bboxes, img_name):
     # Define the key and list of values
     key = 'sat_angle_det'
-    sat_bbox.append(img_name)    # category, angle_pitch, angle_azimuth, p, name
-    values = sat_bbox
-    print(values)
-    print('Successfully published the result to the Redis server')
+    sat_bboxes.append(img_name)    # [[category, angle_pitch, angle_azimuth, prob], name]
+    values = sat_bboxes
+    logger.info("Angle estimations and image name: {}".format(sat_bboxes))
+    logger.info("Successfully published the result to the Redis server")
+    
     # Set the key with the list value
     conn.delete(key)  # Optional: Delete the key if it already exists
     conn.rpush(key, *values)
@@ -165,37 +185,39 @@ for item in sub.listen():
 
         # 根据窗口大小裁剪图像
         win_img = img[win_x - win_size + 1 : win_x, win_y : win_y + win_size]
-        # left_up_corner = [img_size + win_x - win_size, win_y]   # 开窗的左上角在原图中的坐标
         left_up_corner = [img_size + win_y - win_size, win_x]   # 开窗的左上角在原图中的坐标
         win_img = img[left_up_corner[0] : left_up_corner[0] + win_size, left_up_corner[1] : left_up_corner[1] + win_size]
 
-        # img = cv2.imdecode(nparr, 0)  # 0 represents grayscale      
-        # 得到检测边界框
-        sat_bbox = inference(win_img)    # x,y,w,h,p,c
+        # img = cv2.imdecode(nparr, 0)  # 0 represents grayscale    
+          
+        # 得到检测边界框数组
+        sat_bboxes = inference(win_img)    # [[x,y,w,h,p,c], [x,y,w,h,p,c], [x,y,w,h,p,c]]
 
-        # 得到检测框中心在窗口中的坐标
-        sat_bbox_center = [sat_bbox[1]+sat_bbox[3]/2, sat_bbox[0]+sat_bbox[2]/2] 
+        sat_angle_boxes = []
+        for sat_bbox in sat_bboxes:
+            # 得到检测框中心在窗口中的坐标
+            sat_bbox_center = [sat_bbox[1]+sat_bbox[3]/2, sat_bbox[0]+sat_bbox[2]/2] 
 
-        # 计算检测框中心坐标在全图中的坐标
-        sat_bbox_center[0] = sat_bbox_center[0] + left_up_corner[0]
-        sat_bbox_center[1] = sat_bbox_center[1] + left_up_corner[1]
+            # 计算检测框中心坐标在全图中的坐标
+            sat_bbox_center[0] = sat_bbox_center[0] + left_up_corner[0]
+            sat_bbox_center[1] = sat_bbox_center[1] + left_up_corner[1]
 
-        # 计算相机中心与检测框中心的偏移角度
-        dh = camera_center[0] - sat_bbox_center[0]  # h方向偏移量，大于0仰视
-        dw = sat_bbox_center[1] - camera_center[1]  # w方向偏移量，大于0右侧
+            # 计算相机中心与检测框中心的偏移角度
+            dh = camera_center[0] - sat_bbox_center[0]  # h方向偏移量，大于0仰视
+            dw = sat_bbox_center[1] - camera_center[1]  # w方向偏移量，大于0右侧
 
-        angle_pitch = np.arctan(dh/fl) * 180 / np.pi    # 俯仰角，俯视为负， -90~90
-        angle_azimuth = np.arctan(dw/fl) * 180 / np.pi  # 方位角，左侧为负， -180~180
+            angle_pitch = np.arctan(dh/fl) * 180 / np.pi    # 俯仰角，俯视为负， -90~90
+            angle_azimuth = np.arctan(dw/fl) * 180 / np.pi  # 方位角，左侧为负， -180~180
 
+            prob = sat_bbox[4]
+            catagory = sat_bbox[5]
 
-        # 输出结果发送
-        print(img_name)
+            sat_angle_boxes.append([catagory, angle_pitch, angle_azimuth, prob])
 
-        prob = sat_bbox[4]
-        catagory = sat_bbox[5]
-        pub_result([catagory, angle_pitch, angle_azimuth, prob], img_name)    # pub by redis key category, angle_pitch, angle_azimuth, p, name
         
+        pub_result(sat_angle_boxes, img_name)    # pub by redis key sat_angle_det, category, angle_pitch, angle_azimuth, p, name
         
         # 日志记录检测框和耗时
-        logger.info("sat_bbox: {}".format(sat_bbox))
+        
+        logger.info("sat_bbox: {}".format(sat_bboxes))
         logger.info("time_consuming: {:.4f} s".format(time.time()-start_time))
