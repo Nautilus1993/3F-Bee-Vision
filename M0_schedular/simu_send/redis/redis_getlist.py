@@ -3,7 +3,7 @@ import json
 
 # Initialize Redis
 REDIS = redis.Redis(host='127.0.0.1', port=6379)
-TOPIC_RESULT = 'sat_bbox_det'
+TOPIC_RESULT = 'sat_bbox_angle_det'
 
 def get_result_from_redis():
     # Get the JSON string from Redis
@@ -12,7 +12,7 @@ def get_result_from_redis():
         # Deserialize the JSON string to a dictionary
         data = json.loads(serialized_data)
         print('data:', data)
-        print(data['bbox'][2])
-        print('type:', type(data))
+        print(data['bbox1'])
+        print(data['angle1'])
 
 get_result_from_redis()
