@@ -1,21 +1,38 @@
 import socket
 
-from utils.share import LOGGER, IP_ADDRESS
-from utils.remote_control_utils import SERVER_PORT, Instruction, execute, \
-unpack_udp_packet, write_instruction_to_redis
+from utils.share import LOGGER, IP_ADDRESS, get_timestamps
+from utils.remote_control_utils import SERVER_PORT, Instruction, InstructionType, \
+    execute, unpack_udp_packet, write_instruction_to_redis
 
 def receive_instruction(buffer_size):
     counter = 0
     while True:
         udp_packet, addr = sock.recvfrom(buffer_size)
-        time_s, time_ms, instruction = unpack_udp_packet(udp_packet)
-        counter += 1
-        LOGGER.info(f"收到遥控指令：{Instruction(instruction).name} 指令码 {hex(instruction)} 计数器：{counter}")
-        write_instruction_to_redis(instruction, time_s, time_ms, counter)
-        execute(instruction)
-        if counter >= 255:
-            LOGGER("计数器清零")
-            counter= 0
+        # 4类需要处理的指令，数据类型都是Byte5
+        if len(udp_packet) >= 5:
+            ins_type = udp_packet[4]
+
+        if len(udp_packet) == 7:
+            # 遥测指令不作处理
+            pass
+        elif len(udp_packet) == 6:
+            # TODO(wangyuhang):异步包请求
+            if ins_type == InstructionType.ASYNC_PKG.value:
+                pass
+        elif len(udp_packet) == 11:
+            # TODO(wangyuhang):星上时指令,写redis后续用于时间同步
+            if ins_type == InstructionType.TIMER.value:
+                pass
+            # 间接指令
+            elif ins_type == InstructionType.INDIRECT_INS.value:
+                ins_type, instruction = unpack_udp_packet(udp_packet)
+                counter += 1
+                LOGGER.info(f"收到遥控指令：{Instruction(instruction).name} 指令码 {hex(instruction)} 计数器：{counter}")
+                time_s, time_ms = get_timestamps()
+                write_instruction_to_redis(instruction, time_s, time_ms, counter)
+                if counter >= 255:
+                    LOGGER("计数器清零")
+                    counter= 0
 
 # 创建UDP套接字
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)    

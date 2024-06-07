@@ -18,47 +18,48 @@ BUFFER_SIZE = 10 # redis中最多缓存的指令数量
 config_file = "remote_control_config.json"
 config_file_path = os.path.dirname(os.path.abspath(__file__)) + "/" + config_file
 REMOTE_CONTROL_UDP_FORMAT = generate_udp_format(config_file_path)
-LENGTH = 29
-SENDER_ID  = 0x00
-RECEIVER_ID = 0x11
+LENGTH = 11
+SENDER_ID  = 0x55
+RECEIVER_ID = 0xAA
+
+
+"""
+    指令类型枚举值
+"""
+class InstructionType(Enum):
+    TELEMETER = 0x11        # 遥测
+    TIMER = 0x31            # 星上时
+    ASYNC_PKG = 0x15        # 异步包请求
+    INDIRECT_INS = 0x21     # 间接指令
+    INJECT_DATA = 0x29      # 注入数据
 
 """
     指令码枚举值
 """
 class Instruction(Enum):
-    DEVICE_STATE = 0x00
-    DEVICE_RESET = 0x01
-    APP_STOP = 0x10
-    APP_START = 0x11
-    DOWNLOAD_IMG = 0x20
-    DOWNLOAD_LOG = 0x21
-
+    APP_RESTART = 0xFED1
+    APP_STOP = 0xFED2
+    STOP_DOWNLOAD = 0xFED3
 
 """
     UDP 解析和组包 
 """
-def pack_udp_packet(instruction, file_info, algorithm_info):
+def pack_udp_packet(instruction):
     time_s, time_ms = get_timestamps()
-    # TODO:后面加入校验和逻辑
-    checksum = 0
     udp_packet = struct.pack(REMOTE_CONTROL_UDP_FORMAT, 
         LENGTH,             # 1. 有效数据长度
-        SENDER_ID,          # 2. 数据接收方
-        RECEIVER_ID,        # 3. 数据发送方
-        time_s,             # 4. 组包时间秒
-        time_ms,            # 5. 组包时间毫秒
-        instruction,        # 6. 指令码
-        file_info,          # 7. 下行文件元信息
-        algorithm_info,     # 8. 算法遥控数据
-        checksum            # 9. 校验和
+        SENDER_ID,          # 2. 数据发送方
+        RECEIVER_ID,        # 3. 数据接收方
+        0x21,               # 4. 数据类型(目前填固定值间接指令)
+        0,                  # 5. 指令时间码(目前全部置0)
+        instruction,        # 6. 指令类型码
     )
     return udp_packet
 
 def unpack_udp_packet(udp_packet):
-    _, _, _, \
-    time_s, time_ms, instruction, \
-    _, _, _ = struct.unpack(REMOTE_CONTROL_UDP_FORMAT, udp_packet)
-    return time_s, time_ms, instruction
+    _, _, _, ins_type, _, instruction \
+        = struct.unpack(REMOTE_CONTROL_UDP_FORMAT, udp_packet)
+    return ins_type, instruction
 
 #收到的指令写入redis 
 def write_instruction_to_redis(instruction, time_s, time_ms, counter):

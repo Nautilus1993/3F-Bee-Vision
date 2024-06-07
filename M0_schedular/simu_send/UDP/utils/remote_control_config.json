@@ -17,36 +17,19 @@
             "description": "数据接收方"
         },
         {
-            "name": "time_s", 
-            "type": "uint32",
-            "description": "数据包时间戳秒"
+            "name": "instruction_type", 
+            "type": "uint8",
+            "description": "数据类型"
         },
         {
-            "name": "time_ms",
-            "type": "uint16",
-            "description": "数据包时间戳毫秒"
+            "name": "time_s", 
+            "type": "uint32",
+            "description": "指令时间码"
         },
         {
             "name": "instruction", 
-            "type": "uint8",
-            "description": "指令码"
-        },
-        {
-            "name": "download_file_info", 
-            "type": "string",
-            "length": 8,
-            "description": "下传文件元信息"
-        },
-        {
-            "name": "algorithm_data",
-            "type": "string",
-            "length": 8,
-            "description": "算法模块遥控数据"
-        },
-        {
-            "name": "checksum",
             "type": "uint16",
-            "description": "校验和"
+            "description": "指令类型码"
         }
     ]
 }

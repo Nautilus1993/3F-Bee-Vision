@@ -36,7 +36,11 @@ def get_system_status():
     cpu_usage = int(get_cpu_usage())
     disk_usage = int(get_disk_usage())
     memory_usage = int(get_memory_usage())
-    return cpu_usage, disk_usage, memory_usage
+    sys_status = [cpu_usage, disk_usage, memory_usage]
+    if len(sys_status) != 3:
+        print("系统状态返回值长度异常")
+        sys_status = [0, 0, 0]
+    return sys_status
 
 def main():
     # 使用示例

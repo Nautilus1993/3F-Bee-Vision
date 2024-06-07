@@ -12,9 +12,9 @@ TOPIC_ANGLE = 'sat_bbox_angle_det'
 """
 class Target(Enum):
     NONE = 0xFF     # 无效
-    SINGLE = 0x01   # L形，单翼
-    BALL = 0x02     # 球形 
-    DOUBLE = 0x03   # 双翼     
+    SINGLE = 0x00   # L形，单翼
+    BALL = 0x01     # 球形 
+    DOUBLE = 0x02   # 双翼     
 
 """
     部件类别枚举值
@@ -66,8 +66,6 @@ def get_result_from_redis():
         return empty_result 
     
     # 由第一个结果的category数值，可以判断当前BB的类别
-    print(f"第一个部件的类别{target} 置信度{conf}")
-    print(type(target))
     if target == Target.SINGLE.value:     # L形，只返回一个帆板
         panel_1 = format_angle(data['angle1'])
         main_body = [0,0,0,0]
