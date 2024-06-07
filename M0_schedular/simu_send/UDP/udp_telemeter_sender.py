@@ -9,8 +9,8 @@ import concurrent.futures
 
 from utils.share import LOGGER, IP_ADDRESS, get_timestamps
 from utils.telemeter_utils import SERVER_PORT
-from utils.telemeter_utils import \
-    fake_result_from_redis, get_result_from_redis, pack_udp_packet, format_telemeter
+from utils.telemeter_utils import get_result_from_redis, \
+    fake_result_from_redis, pack_udp_packet, format_telemeter
 from utils.remote_control_utils import read_instruction_from_redis
 from utils.system_usage import get_system_status
 
@@ -21,13 +21,8 @@ BRATE = 115200
 def packup_telemetering_data(counter):
     # 1. 组包时间
     time_s, time_ms = get_timestamps()
-    
-    # 2. yolo识别结果
-    # TODO(wangyuhang):换成redis中的真实数据
-    image_name, t1, t2, t3 = fake_result_from_redis()
-    # LOGGER.info("From redis get result of image: " + image_name)
 
-    # 3. 上一条指令
+    # 2. 指令状态
     json_string = read_instruction_from_redis()
     try:
         last_instruction = json.loads(json_string)
@@ -35,14 +30,15 @@ def packup_telemetering_data(counter):
         # 指令转为16进制数
         ins_code = int(last_instruction['instruction_code'], 16)
     except TypeError:
-        print("None")
         ins_counter = 0
         ins_code = 0x00
 
-    # 4. 获取设备状态[cpu, disk, memory]
+    # 3. 获取设备状态[cpu, disk, memory]
     sys_status = get_system_status() 
-    if len(sys_status) != 3:
-        LOGGER.warning("系统状态返回值长度异常")
+    
+    # 4. yolo识别结果
+    # TODO(wangyuhang):换成redis中的真实数据
+    target, a1, a2, a3 = get_result_from_redis()
 
     # 组装遥测帧
     telemeter_data = pack_udp_packet(
@@ -50,8 +46,11 @@ def packup_telemetering_data(counter):
         ins_counter,
         ins_code,
         time_s,             
-        time_ms,            
-        t1,
+        time_ms,   
+        target,         
+        a1,
+        a2, 
+        a3,
         sys_status          
     )
     format_telemeter(telemeter_data)
