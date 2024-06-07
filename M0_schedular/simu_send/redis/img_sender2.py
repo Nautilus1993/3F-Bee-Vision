@@ -22,7 +22,7 @@ for img_name in img_list:
     message = {
         'name': img_name,
         'win_size': (1024, 1024),
-        'window': [512, 512],
+        'window': [1024, 0],
         'data': encoded_img
     }
 

@@ -42,12 +42,29 @@ def trans_bbox_format(single_bbox, result_w, result_h, img_w, img_h):
     sat_bbox[3] = bbox_h
     return sat_bbox
 
+def draw_boxes(image, boxes, output_size=None):
+    # 定义类别，用于显示
+    classes = ['L', 'Ball', 'D_cabin', 'D_panel']
+    for bbox in boxes:
+        x1,y1,x2,y2 = int(bbox[0]), int(bbox[1]), int(bbox[2]+bbox[0]), int(bbox[3]+bbox[1])
+
+        confidence = bbox[4]
+        # label = str(bbox[5])
+        label = classes[int(bbox[5])]
+        color = (255, 0, 0)  # Red color for box
+        cv2.rectangle(image, (x1, y1), (x2, y2), color, 2)
+        cv2.putText(image, f'{label} {confidence:.2f}', (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+
+        if output_size is not None:
+            image = cv2.resize(image, output_size, interpolation=cv2.INTER_LINEAR)
+    return image
+
 def inference(img_grey):
     """输入灰度图，输出检测结果
     Args:
         img_grey:灰度图矩阵
     Returns:
-        result_bbox = [[],[],[]]
+        result_bbox = [[],[],[]]  first: L/Ball/D_cabin; second: left panel; third: right panel
     """
     img_h = img_grey.shape[0]
     img_w = img_grey.shape[1]
@@ -105,22 +122,42 @@ def inference(img_grey):
                 result_bbox[2] = [0, 0, 0, 0, 0, 0]
             elif result_bbox[0][-1] == 2:
                 if len(sorted_D_panel) >= 2:
-                    result_bbox[1] = sorted_D_panel[0]
-                    result_bbox[2] = sorted_D_panel[1]
+                    # distinguish left and right panel
+                    if sorted_D_panel[0][0] <= sorted_D_panel[1][0]:
+                        result_bbox[1] = sorted_D_panel[0]
+                        result_bbox[2] = sorted_D_panel[1]
+                    else:
+                        result_bbox[1] = sorted_D_panel[1]
+                        result_bbox[2] = sorted_D_panel[0]
                 elif len(sorted_D_panel) == 1:
-                    result_bbox[1] = sorted_D_panel[0]
-                    result_bbox[2] = [0, 0, 0, 0, 0, 0]
+                    # compare panel with cabin center
+                    if sorted_D_panel[0][0] <= result_bbox[0][0]:
+                        result_bbox[1] = sorted_D_panel[0]
+                        result_bbox[2] = [0, 0, 0, 0, 0, 0]
+                    else:
+                        result_bbox[1] = [0, 0, 0, 0, 0, 0]
+                        result_bbox[2] = sorted_D_panel[0]
                 elif len(sorted_D_panel) == 0:
                     result_bbox[1] = [0, 0, 0, 0, 0, 0]
                     result_bbox[2] = [0, 0, 0, 0, 0, 0]
         else:
             result_bbox[0] = [0, 0, 0, 0, 0, 0]
             if len(sorted_D_panel) >= 2:
-                result_bbox[1] = sorted_D_panel[0]
-                result_bbox[2] = sorted_D_panel[1]
+                # distinguish left and right panel
+                if sorted_D_panel[0][0] <= sorted_D_panel[1][0]:
+                    result_bbox[1] = sorted_D_panel[0]
+                    result_bbox[2] = sorted_D_panel[1]
+                else:
+                    result_bbox[1] = sorted_D_panel[1]
+                    result_bbox[2] = sorted_D_panel[0]
             elif len(sorted_D_panel) == 1:
-                result_bbox[1] = sorted_D_panel[0]
-                result_bbox[2] = [0, 0, 0, 0, 0, 0]
+                # compare panel with cabin center
+                if sorted_D_panel[0][0] <= result_bbox[0][0]:
+                    result_bbox[1] = sorted_D_panel[0]
+                    result_bbox[2] = [0, 0, 0, 0, 0, 0]
+                else:
+                    result_bbox[1] = [0, 0, 0, 0, 0, 0]
+                    result_bbox[2] = sorted_D_panel[0]
             elif len(sorted_D_panel) == 0:
                 result_bbox[1] = [0, 0, 0, 0, 0, 0]
                 result_bbox[2] = [0, 0, 0, 0, 0, 0]
@@ -128,6 +165,8 @@ def inference(img_grey):
         result_bbox[0] = [0, 0, 0, 0, 0, 0]    # 没有检测结果
         result_bbox[1] = [0, 0, 0, 0, 0, 0]
         result_bbox[2] = [0, 0, 0, 0, 0, 0]
+
+
     return result_bbox
 
 def pos2angle(bbox, left_up_corner, camera_center):
@@ -140,12 +179,12 @@ def pos2angle(bbox, left_up_corner, camera_center):
     """
     sat_angle_boxes = []
     for sat_bbox in bbox:
-        # 得到检测框中心在窗口中的坐标
+        # 得到检测框中心在全图中的坐标
         sat_bbox_center = [sat_bbox[1]+sat_bbox[3]/2, sat_bbox[0]+sat_bbox[2]/2] 
 
         # 计算检测框中心坐标在全图中的坐标
-        sat_bbox_center[0] = sat_bbox_center[0] + left_up_corner[0]
-        sat_bbox_center[1] = sat_bbox_center[1] + left_up_corner[1]
+        # sat_bbox_center[0] = sat_bbox_center[0] + left_up_corner[0]
+        # sat_bbox_center[1] = sat_bbox_center[1] + left_up_corner[1]
 
         # 计算相机中心与检测框中心的偏移角度
         dh = camera_center[0] - sat_bbox_center[0]  # h方向偏移量，大于0仰视
@@ -157,25 +196,9 @@ def pos2angle(bbox, left_up_corner, camera_center):
         prob = sat_bbox[4]
         category = sat_bbox[5]
 
-        sat_angle_boxes.append([category, angle_pitch, angle_yaw, prob])
+        sat_angle_boxes.append([category, angle_yaw, angle_pitch, prob])
     return sat_angle_boxes
 
-def draw_boxes(image, boxes, output_size=None):
-    # 定义类别，用于显示
-    classes = ['L', 'Ball', 'D_cabin', 'D_panel']
-    for bbox in boxes:
-        x1,y1,x2,y2 = int(bbox[0]), int(bbox[1]), int(bbox[2]+bbox[0]), int(bbox[3]+bbox[1])
-
-        confidence = bbox[4]
-        # label = str(bbox[5])
-        label = classes[int(bbox[5])]
-        color = (255, 0, 0)  # Red color for box
-        cv2.rectangle(image, (x1, y1), (x2, y2), color, 2)
-        cv2.putText(image, f'{label} {confidence:.2f}', (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
-
-        if output_size is not None:
-            image = cv2.resize(image, output_size, interpolation=cv2.INTER_LINEAR)
-    return image
 
 def pub_result(sat_bboxes, sat_angle_boxes, img_name):
     # Define the key and list of values
@@ -271,15 +294,20 @@ for item in sub.listen():
           
         # 得到检测边界框数组
         sat_bboxes = inference(win_img)    # [[x,y,w,h,p,c], [x,y,w,h,p,c], [x,y,w,h,p,c]]
+
+        for i in range(len(sat_bboxes)):
+            sat_bboxes[i][0] += left_up_corner[1]
+            sat_bboxes[i][1] += left_up_corner[0]
         sat_angle_boxes = pos2angle(sat_bboxes, left_up_corner, camera_center)
 
         # visualization
         if visualization:
-            boxed_img = draw_boxes(img, sat_bboxes)
-            # cv2.imshow('image with boxes', boxed_img)
-            # cv2.waitKey(1)
-
+            print('saving...')
+            boxed_img = draw_boxes(img, sat_bboxes, (512, 512))
+            cv2.imshow('image with boxes', boxed_img)
+            cv2.waitKey(0)
             cv2.imwrite('output.jpg', boxed_img)
+
         
         pub_result(sat_bboxes, sat_angle_boxes, img_name)    # pub by redis key sat_angle_det, category, angle_pitch, angle_azimuth, p, name
         
