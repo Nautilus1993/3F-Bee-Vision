@@ -55,8 +55,8 @@ def draw_boxes(image, boxes, output_size=None):
         cv2.rectangle(image, (x1, y1), (x2, y2), color, 2)
         cv2.putText(image, f'{label} {confidence:.2f}', (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
 
-        if output_size is not None:
-            image = cv2.resize(image, output_size, interpolation=cv2.INTER_LINEAR)
+    if output_size is not None:
+        image = cv2.resize(image, output_size, interpolation=cv2.INTER_LINEAR)
     return image
 
 def inference(img_grey):
@@ -307,6 +307,7 @@ for item in sub.listen():
             cv2.imshow('image with boxes', boxed_img)
             cv2.waitKey(0)
             cv2.imwrite('output.jpg', boxed_img)
+            cv2.destroyAllWindows()
 
         
         pub_result(sat_bboxes, sat_angle_boxes, img_name)    # pub by redis key sat_angle_det, category, angle_pitch, angle_azimuth, p, name
