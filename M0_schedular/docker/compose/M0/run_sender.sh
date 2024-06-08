@@ -1,2 +1,2 @@
 #!/bin/bash
-python3 -u /usr/src/app/UDP/udp_telemeter_sender.py
+python3 -u /usr/src/app/telemeter/udp_telemeter_sender.py

@@ -11,7 +11,7 @@ services:
       test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
   
   image_receiver:
-    image: orin_nano_messenger:20240603
+    image: orin_nano_messenger:20240608
     runtime: nvidia
     network_mode: "host"
     container_name: M0_image_receiver
@@ -20,11 +20,11 @@ services:
         condition: service_healthy
     command: /usr/src/deploy/run_receiver.sh
     volumes:
-      - $DEV_WORKSPACE/M0_schedular/simu_send/:/usr/src/app/
+      - $DEV_WORKSPACE/M0_schedular/communication/:/usr/src/app/
       - $DEVOPS_WORKSPACE/M0/:/usr/src/deploy/
     
   telemeter:
-    image: orin_nano_messenger:20240603
+    image: orin_nano_messenger:20240608
     runtime: nvidia
     network_mode: "host"
     container_name: M0_telemeter
@@ -33,11 +33,12 @@ services:
         condition: service_healthy
     command: /usr/src/deploy/run_sender.sh
     volumes:
-      - $DEV_WORKSPACE/M0_schedular/simu_send/:/usr/src/app/
+      - $DEV_WORKSPACE/M0_schedular/communication/:/usr/src/app/
       - $DEVOPS_WORKSPACE/M0/:/usr/src/deploy/
-    
+      - /var/run/docker.sock:/var/run/docker.sock
+
   remote_control:
-    image: orin_nano_messenger:20240603
+    image: orin_nano_messenger:20240608
     runtime: nvidia
     network_mode: "host"
     container_name: M0_remote_control
@@ -46,8 +47,9 @@ services:
         condition: service_healthy
     command: /usr/src/deploy/run_remote_control.sh
     volumes:
-      - $DEV_WORKSPACE/M0_schedular/simu_send/:/usr/src/app/
+      - $DEV_WORKSPACE/M0_schedular/communication/:/usr/src/app/
       - $DEVOPS_WORKSPACE/M0/:/usr/src/deploy/
+      - /var/run/docker.sock:/var/run/docker.sock
     
   quality:
     image: orin_nano_yolov5:20231128

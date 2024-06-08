@@ -1,0 +1,84 @@
+{
+    "schema": "Telemeter",
+    "fields": [
+        {
+            "name": "effect_length", 
+            "id": 1,
+            "type": "uint16",
+            "description": "有效数据长度"
+        },
+        {
+            "name": "sender_id", 
+            "id": 2,
+            "type": "uint8",
+            "description": "数据发送方"
+        },
+        {
+            "name": "receiver_id",
+            "id": 3, 
+            "type": "uint8",
+            "description": "数据接收方"
+        },
+        {
+            "name": "time_s", 
+            "id": 4,
+            "type": "uint32",
+            "description": "图像拍摄时间戳秒"
+        },
+        {
+            "name": "time_ms",
+            "id": 5,
+            "type": "uint16",
+            "description": "图像拍摄时间戳毫秒"
+        },
+        {
+            "name": "exposure", 
+            "id": 6,
+            "type": "uint16",
+            "description": "曝光时长"
+        },
+        {
+            "name": "chunk_sum", 
+            "id": 7,
+            "type": "uint32",
+            "description": "图像数据UDP包总数"
+        },
+        {
+            "name": "chunk_seq", 
+            "id": 8,
+            "type": "uint32",
+            "description": "包序号"
+        },
+        {
+            "name": "window_width", 
+            "id": 9,
+            "type": "uint16",
+            "description": "开窗宽度"
+        },
+        {
+            "name": "window_height", 
+            "id": 10,
+            "type": "uint16",
+            "description": "开窗高度"
+        },
+        {
+            "name": "window_x", 
+            "id": 11,
+            "type": "uint16",
+            "description": "开窗左下坐标x"
+        },
+        {
+            "name": "window_y", 
+            "id": 12,
+            "type": "uint16",
+            "description": "开窗左下坐标y"
+        },
+        {
+            "name": "image_chunk",
+            "id": 13,
+            "type": "string",
+            "length": 1024,
+            "description": "图像包数据域"
+        }
+    ]
+}

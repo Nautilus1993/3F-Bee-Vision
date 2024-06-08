@@ -1,2 +1,2 @@
 #!/bin/bash
-python3 -u /usr/src/app/UDP/udp_img_receiver.py
+python3 -u /usr/src/app/image/udp_img_receiver.py
