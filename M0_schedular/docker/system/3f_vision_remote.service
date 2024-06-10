@@ -1,0 +1,17 @@
+[Unit]
+Description=3f-vision间接指令接收服务
+After=3f_vision_docker.service
+
+[Service]
+EnvironmentFile=/home/ywang/.config/systemd/user/3f_vision.env
+WorkingDirectory=/home/ywang
+ExecStart=/home/ywang/miniconda3/envs/yolo/bin/python /home/ywang/Documents/3F-Bee-Vision/M0_schedular/communication/remote_control/remote_control_receiver.py
+
+Restart=always
+RestartSec=3
+
+StandardOutput=append:/home/ywang/my-start-remote.log
+StardardError=append:/home/ywang/my-start-remote-error.log
+
+[Install]
+WantedBy=default.target

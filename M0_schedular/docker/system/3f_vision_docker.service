@@ -1,0 +1,17 @@
+[Unit]
+Description=开启3f-vision项目docker compose服务
+After=docker.service
+
+[Service]
+EnvironmentFile=/home/ywang/.config/systemd/user/3f_vision.env
+WorkingDirectory=/home/ywang
+ExecStart=/usr/libexec/docker/cli-plugins/docker-compose -f /home/ywang/Documents/3F-Bee-Vision/M0_schedular/docker/compose/docker-compose.yaml up redis telemeter
+
+Restart=always
+RestartSec=3
+
+StandardOutput=append:/home/ywang/my-start-redis.log
+StardardError=append:/home/ywang/my-start-redis-error.log
+
+[Install]
+WantedBy=default.target

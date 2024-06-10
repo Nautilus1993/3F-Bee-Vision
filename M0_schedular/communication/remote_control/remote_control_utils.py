@@ -45,7 +45,7 @@ class InstructionType(Enum):
     指令码枚举值
 """
 class Instruction(Enum):
-    APP_RESTART = 0xFED1
+    APP_START = 0xFED1
     APP_STOP = 0xFED2
     STOP_DOWNLOAD = 0xFED3
 

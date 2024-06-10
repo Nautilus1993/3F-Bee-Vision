@@ -9,7 +9,7 @@ sys.path.append(parent_dir)
 sys.path.append(script_dir)
 from utils.share import LOGGER, IP_ADDRESS, get_timestamps
 from remote_control_utils import SERVER_PORT, Instruction, InstructionType, \
-    unpack_udp_packet, write_instruction_to_redis
+    unpack_udp_packet, write_instruction_to_redis, execute_indirect_ins
 
 def receive_instruction(buffer_size):
     counter = 0
@@ -40,6 +40,7 @@ def receive_instruction(buffer_size):
                 if counter >= 255:
                     LOGGER("计数器清零")
                     counter= 0
+                execute_indirect_ins(instruction)
 
 # 创建UDP套接字
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)    
