@@ -82,6 +82,13 @@ def unpack_udp_packet(udp_packet):
     = struct.unpack(IMAGE_UDP_FORMAT, udp_packet)
     return time_s, time_ms, win_w, win_h, win_x, win_y, chunk_sum, chunk_seq, image_chunk[:effect_len]
 
+from utils.share import format_udp_packet
+# print UDP packet
+def format_image_udp_packet(udp_packet):
+    config_file = 'image_config.json'
+    config_file_path = parent_dir + "/message_config/" + config_file
+    format_udp_packet(udp_packet, config_file_path)
+
 # 将收到的图片发给redis
 def process_image_to_redis(image_data, time_s, time_ms, win_w, win_h, win_x, win_y):
     image_name = f"image_{time_s}_{time_ms}.bmp"
@@ -103,9 +110,10 @@ def process_image_to_file(image_data, time_s, time_ms, win_w, win_h, win_x, win_
     image_name = f"image_{time_s}_{time_ms}.bmp"
     # 转为Numpy bytes
     image_array = np.frombuffer(image_data, dtype=np.uint8) 
+    LOGGER.info(f"图片{image_name} winsize = ({win_w}, {win_h}), window = ({win_x}, {win_y})")
     image_array.resize(win_w, win_h)
     cv2.imwrite(os.path.join(IMAGE_DIR, image_name), image_array)
-    LOGGER.info(f"图片{image_name}写入文件")
+    # LOGGER.info(f"图片{image_name}写入文件, winsize = ({win_w}, {win_h}), window = ({win_x}, {win_y})")
 
 def write_to_bytes(bytes_string, file_name):
     file_path = os.path.join(IMAGE_DIR, file_name)

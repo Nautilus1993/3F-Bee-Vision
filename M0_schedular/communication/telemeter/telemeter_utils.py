@@ -21,7 +21,8 @@ from system_usage import get_system_status
 from message_config.udp_format import TELEMETER_UDP_FORMAT
 
 # 发送端的IP地址和端口号
-SERVER_PORT = 8090
+SERVER_IP_ADDR = '192.168.0.103'
+SERVER_PORT = 18089
 
 # 获取系统状态
 def get_device_status():
@@ -51,13 +52,25 @@ def fake_result_from_redis():
 def generate_random_bytes(length):
     return os.urandom(length)
 
-fake_string_11_26 = generate_random_bytes(30)
-fake_string_40_50 = generate_random_bytes(20)
+def generate_incrementing_bytes(length):
+    """
+    生成一个从 0 开始循环递增的 bytes 对象，长度为指定的 length。
+
+    参数:
+    length (int): 生成的 bytes 对象的长度。
+
+    返回:
+    bytes: 包含从 0 开始循环递增值的 bytes 对象。
+    """
+    return bytes([i % 256 for i in range(length)])
+
+fake_string_11_26 = generate_incrementing_bytes(30)
+fake_string_40_50 = generate_incrementing_bytes(20)
 
 """
     UDP 解析和组包 
 """
-def pack_udp_packet(c1, c2, ins_code, time_s, time_ms, target, t1, t2, t3, sys_status):
+def pack_telemeter_packet(c1, c2, ins_code, time_s, time_ms, target, t1, t2, t3, sys_status):
     udp_packet = struct.pack(TELEMETER_UDP_FORMAT, 
         time_s,             # 1. 组包时间秒
         time_ms,            # 2. 组包时间毫秒
@@ -87,7 +100,7 @@ def pack_udp_packet(c1, c2, ins_code, time_s, time_ms, target, t1, t2, t3, sys_s
     )
     return udp_packet
 
-def unpack_udp_packet(udp_packet):
+def unpack_telemeter_packet(udp_packet):
     time_s, time_ms, \
     counter_telemeter, counter_instruction, instruction_code, _, \
     cpu_usage, disk_usage, memory_usage, _, \
@@ -104,6 +117,35 @@ def format_telemeter(udp_packet):
     config_file = 'telemeter_config.json'
     config_file_path = parent_dir + "/message_config/" + config_file
     format_udp_packet(udp_packet, config_file_path)
+
+def pack_udp_packet(telemeter_data):
+    UDP_FORMAT = "!HB96s"
+    data_length = 97
+    data_type = 0x12
+    udp_packet = struct.pack(UDP_FORMAT, 
+        data_length, 
+        data_type, 
+        telemeter_data)
+    checksum = single_byte_checksum(udp_packet)
+    udp_packet_with_checksum = struct.pack("!99sH",
+        udp_packet,
+        checksum)
+    return udp_packet_with_checksum
+
+def single_byte_checksum(data):
+    """
+    计算单字节校验和。
+
+    参数:
+    data (bytes): 需要计算校验和的字节数据。
+
+    返回:
+    int: 单字节校验和(0-65535)
+    """
+    checksum = sum(data) % 65536
+    print(f"数据长度 {len(data)} 校验和: {checksum}")
+    return checksum
+
 
 # def main():
 #     result = get_result_from_redis()

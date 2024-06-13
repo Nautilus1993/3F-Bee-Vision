@@ -11,12 +11,12 @@ sys.path.append(parent_dir)
 sys.path.append(script_dir)
 from utils.share import LOGGER
 from telemeter_utils import SERVER_PORT
-from telemeter_utils import unpack_udp_packet
+from telemeter_utils import unpack_telemeter_packet
 
 class UDPTelemeterProtocol(DatagramProtocol):
     def datagramReceived(self, data, addr):
         counter, time_s, time_ms \
-            = unpack_udp_packet(data)
+            = unpack_telemeter_packet(data)
         LOGGER.info(f" 遥测帧计数{counter} 时间戳 {time_s}.{time_ms}")
         # self.transport.write(data, addr)
 

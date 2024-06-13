@@ -28,7 +28,7 @@
         {
             "name": "state_instruction", 
             "id": 5,
-            "type": "uint16",
+            "type": "uint8",
             "description": "指令状态码"
         },
         {

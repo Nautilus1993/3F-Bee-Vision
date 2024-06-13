@@ -14,9 +14,9 @@ sys.path.append(script_dir)
 
 from utils.share import LOGGER, IP_ADDRESS, get_timestamps
 from remote_control.remote_control_utils import read_instruction_from_redis
-from telemeter_utils import SERVER_PORT
+from telemeter_utils import SERVER_PORT, SERVER_IP_ADDR
 from telemeter_utils import get_result_from_redis, get_device_status, \
-    pack_udp_packet, format_telemeter
+    pack_telemeter_packet, format_telemeter, pack_udp_packet
 
 # TODO(wangyuhang):后面把串口的逻辑拆出这个模块
 SERIAL_PORT = '/dev/ttyXRUSB1'
@@ -44,7 +44,7 @@ def packup_telemetering_data(counter):
     target, a1, a2, a3 = get_result_from_redis()
 
     # 组装遥测帧
-    telemeter_data = pack_udp_packet(
+    telemeter_data = pack_telemeter_packet(
         counter,
         ins_counter,
         ins_code,
@@ -57,13 +57,15 @@ def packup_telemetering_data(counter):
         sys_status          
     )
     format_telemeter(telemeter_data)
-    return telemeter_data
+
+    udp_packet = pack_udp_packet(telemeter_data)
+    return udp_packet
 
 
 def send_udp(counter):
     data = packup_telemetering_data(counter)
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.sendto(data, (IP_ADDRESS, SERVER_PORT))
+    sock.sendto(data, (SERVER_IP_ADDR, SERVER_PORT))
     # 关闭套接字
     sock.close()
 
@@ -84,9 +86,10 @@ def main():
         # 串口发送
         # send_serial(counter)
         # UDP发送
+        LOGGER.info(f"向IP {SERVER_IP_ADDR} Port {SERVER_PORT} 发送数据")
         send_udp(counter)
         counter += 1
-        time.sleep(1)
+        time.sleep(0.5)
 
 if __name__=="__main__":
     main()
