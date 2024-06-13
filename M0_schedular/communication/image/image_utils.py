@@ -46,7 +46,9 @@ IMAGE_SIZE = 4195382 # 图片大小 2048.bmp
 
 # 图像UDP包格式
 # https://docs.python.org/3/library/struct.html#format-characters
-from message_config.udp_format import IMAGE_UDP_FORMAT
+from message_config.udp_format import IMAGE_UDP_FORMAT, CAMERALINK_HEADER_FORMAT
+
+from utils.share import get_timestamps
 
 # 封装图像UDP包
 def pack_udp_packet(time_s, time_ms, window, chunk_sum, chunk_seq, image_chunk):
@@ -80,14 +82,33 @@ def unpack_udp_packet(udp_packet):
     win_w, win_h, win_x, win_y, \
     image_chunk \
     = struct.unpack(IMAGE_UDP_FORMAT, udp_packet)
-    return time_s, time_ms, win_w, win_h, win_x, win_y, chunk_sum, chunk_seq, image_chunk[:effect_len]
+    # return time_s, time_ms, win_w, win_h, win_x, win_y, chunk_sum, chunk_seq, image_chunk[:effect_len]
+    return time_s, time_ms, win_w, win_h, win_x, win_y, chunk_sum, chunk_seq, image_chunk
+
+# 解析cameralink首帧数据
+def unpack_cameralink_header(cameralink_header):
+    if len(cameralink_header) != 29:
+        LOGGER.warning("cameralink帧头数据长度有误！")
+    frame_header, _, _, _, \
+    _, _, exposure, _, \
+    time_s, time_ms, win_y, win_x, \
+    win_w, win_h, _, _ \
+     = struct.unpack(CAMERALINK_HEADER_FORMAT, cameralink_header)
+    return time_s, time_ms, exposure, win_w, win_h, win_x, win_y
+    
 
 from utils.share import format_udp_packet
-# print UDP packet
+# 打印图像UDP数据包
 def format_image_udp_packet(udp_packet):
     config_file = 'image_config.json'
     config_file_path = parent_dir + "/message_config/" + config_file
     format_udp_packet(udp_packet, config_file_path)
+
+# 打印星敏帧头数据包
+def format_cameralink_header(cameralink_header):
+    config_file = 'cameralink_config.json'
+    config_file_path = parent_dir + "/message_config/" + config_file
+    format_udp_packet(cameralink_header, config_file_path)
 
 # 将收到的图片发给redis
 def process_image_to_redis(image_data, time_s, time_ms, win_w, win_h, win_x, win_y):
@@ -105,12 +126,33 @@ def process_image_to_redis(image_data, time_s, time_ms, win_w, win_h, win_x, win
     REDIS.publish("topic.img", str(message))   
     LOGGER.info(f"图片{image_name}写入redis")
 
+"""
+    format打印的Bytes格式，用于对照每个字节和接收方是否一致
+"""
+def format_bytes_stream(byte_stream):
+    formatted_stream = ""
+    for i, byte in enumerate(byte_stream):
+        formatted_stream += f"{byte:02X}"
+        if (i + 1) % 2 == 0:
+            formatted_stream += " "
+        if (i + 1) % 16 == 0:
+            formatted_stream += "\n"
+    return formatted_stream
+
+def process_image_to_bin(image_data):
+    time_s, time_ms = get_timestamps()
+    file_name = f"raw_{time_s}_{time_ms}.bmp"
+    with open(file_name, 'wb') as file:
+        formated_bytes = format_bytes_stream(image_data)
+        file.write(image_data)
+
 # 将收到的图片存储为文件
-def process_image_to_file(image_data, time_s, time_ms, win_w, win_h, win_x, win_y):
-    image_name = f"image_{time_s}_{time_ms}.bmp"
+def process_image_to_file(image_data, time_s, time_ms, exposure, win_w, win_h, win_x, win_y):
+    image_name = f"image_{time_s}_{time_ms}_{exposure}.bmp"
+    LOGGER.info(f"图片{image_name} 长度 {len(image_data)} bytes写入文件, winsize = ({win_w}, {win_h}), window = ({win_x}, {win_y})")
+
     # 转为Numpy bytes
     image_array = np.frombuffer(image_data, dtype=np.uint8) 
-    LOGGER.info(f"图片{image_name} winsize = ({win_w}, {win_h}), window = ({win_x}, {win_y})")
     image_array.resize(win_w, win_h)
     cv2.imwrite(os.path.join(IMAGE_DIR, image_name), image_array)
     # LOGGER.info(f"图片{image_name}写入文件, winsize = ({win_w}, {win_h}), window = ({win_x}, {win_y})")

@@ -11,9 +11,10 @@ sys.path.append(parent_dir)
 sys.path.append(script_dir)
 
 from utils.share import LOGGER, IP_ADDRESS
-from image_utils import unpack_udp_packet, process_image_to_file, process_image_to_redis, process_image_to_bin
+from image_utils import unpack_udp_packet, unpack_cameralink_header 
+from image_utils import process_image_to_file, process_image_to_redis, process_image_to_bin
 from image_utils import CHUNK_SIZE, HEADER_SIZE, RECV_PORT
-from image_utils import format_image_udp_packet
+from image_utils import format_image_udp_packet, format_cameralink_header
 
 def receive_image(buffer_size):
     # UDP包缓存：以包序号为key存储UDP包中的有效数据
@@ -27,19 +28,26 @@ def receive_image(buffer_size):
             continue
         
         # 长度正确则调用UDP解析函数
-        time_s, \
-        time_ms, \
-        win_w, \
-        win_h, \
-        win_x, \
-        win_y, \
+        _, \
+        _, \
+        _, \
+        _, \
+        _, \
+        _, \
         chunk_sum, \
         chunk_seq, \
         image_chunk = unpack_udp_packet(udp_packet)
 
         # Case1: 首帧
         if chunk_seq == 0:
-            format_image_udp_packet(udp_packet)
+            # 打印UDP首帧
+            # format_image_udp_packet(udp_packet)
+            
+            # 打印cameralink帧头内容
+            cameralink_header = image_chunk[:29]
+            format_cameralink_header(cameralink_header)
+            time_s, time_ms, exposure, win_w, win_h, win_x, win_y \
+                = unpack_cameralink_header(cameralink_header)
             # 若缓存非空，说明上一张图片未收全
             if(len(received_packets) != 0):
                 LOGGER.error("收到第一帧数据，缓存非空，上一张图片未收全!")
@@ -61,8 +69,8 @@ def receive_image(buffer_size):
                 image_data = b''.join(sorted_packets)
                 # 将图像名，图像时间戳，开窗位置返回给redis或写入文件
                 LOGGER.info(f"共接收{len(received_packets)}个分片")
-                process_image_to_bin(image_data)
-                # process_image_to_file(image_data, time_s, time_ms, win_w, win_h, win_x, win_y)
+                # process_image_to_bin(image_data)
+                process_image_to_file(image_data, time_s, time_ms, exposure, win_w, win_h, win_x, win_y)
                 # process_image_to_redis(image_data, time_s, time_ms, win_w, win_h, win_x, win_y)
             # 如果未收到所有的包，则报丢包错误
             else:

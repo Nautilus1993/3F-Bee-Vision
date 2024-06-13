@@ -16,7 +16,7 @@ sys.path.append(script_dir)
 from utils.docker_status import DockerComposeManager
 
 # 加载遥测数据格式配置文件,生成UDP包格式
-from message_config.udp_format import INDIRECT_INS_UDP_FORMAT
+from message_config.udp_format import INDIRECT_INS_UDP_FORMAT, TIME_INS_FORMAT
 
 # 接收端的IP地址和端口号
 SERVER_PORT = 10090
@@ -67,6 +67,25 @@ def unpack_udp_packet(udp_packet):
     _, _, _, ins_type, _, instruction \
         = struct.unpack(INDIRECT_INS_UDP_FORMAT, udp_packet)
     return ins_type, instruction
+
+"""
+    星上时UDP解析和组包 
+"""
+def pack_time_ins_packet(time_s, time_ms):
+    udp_packet = struct.pack(TIME_INS_FORMAT, 
+        LENGTH,             # 1. 有效数据长度
+        SENDER_ID,          # 2. 数据发送方
+        RECEIVER_ID,        # 3. 数据接收方
+        0x31,               # 4. 星上时数据类型
+        time_s,             # 5. 星上时时间戳秒
+        time_ms,            # 6. 星上时时间戳毫秒
+    )
+    return udp_packet
+
+def unpack_time_ins_packet(udp_packet):
+    _, _, _, ins_type, time_s, time_ms \
+        = struct.unpack(TIME_INS_FORMAT, udp_packet)
+    return ins_type, time_s, time_ms
 
 #收到的指令写入redis 
 def write_instruction_to_redis(instruction, time_s, time_ms, counter):

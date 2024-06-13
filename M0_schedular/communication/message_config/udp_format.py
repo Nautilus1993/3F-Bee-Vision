@@ -18,7 +18,13 @@ TELEMETER_UDP_FORMAT = generate_udp_format(telemeter_config_file)
 # 加载图像包格式配置文件,生成UDP包格式
 image_config_file = script_dir + "/image_config.json"
 IMAGE_UDP_FORMAT = generate_udp_format(image_config_file)
+# 加载cameralink包头格式配置文件，生成UDP包格式
+cameralink_config_file = script_dir + "/cameralink_config.json"
+CAMERALINK_HEADER_FORMAT = generate_udp_format(cameralink_config_file)
 
 # 加载间接指令配置文件,生成UDP包格式
 indirect_ins_config_file = script_dir + "/indirect_ins_config.json"
 INDIRECT_INS_UDP_FORMAT = generate_udp_format(indirect_ins_config_file)
+
+time_ins_config_file = script_dir + "/time_ins_config.json"
+TIME_INS_FORMAT = generate_udp_format(indirect_ins_config_file)

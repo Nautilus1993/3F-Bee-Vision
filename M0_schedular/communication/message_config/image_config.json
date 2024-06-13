@@ -1,5 +1,5 @@
 {
-    "schema": "Telemeter",
+    "schema": "Image",
     "fields": [
         {
             "name": "effect_length", 
