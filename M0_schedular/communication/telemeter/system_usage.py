@@ -1,5 +1,6 @@
 import psutil
 import shutil
+import time
 
 def get_cpu_usage():
     """获取 CPU 占用率"""
@@ -33,8 +34,13 @@ def get_power_usage():
         return 0
 
 def get_system_status():
-    cpu_usage = int(get_cpu_usage())
+    # start_time = time.time()
+    # cpu_usage = int(get_cpu_usage())
+    # elapsed_time = time.time() - start_time
+    # print(elapsed_time)
     disk_usage = int(get_disk_usage())
+    # disk_usage = 0
+    cpu_usage = 0
     memory_usage = int(get_memory_usage())
     sys_status = [cpu_usage, disk_usage, memory_usage]
     if len(sys_status) != 3:

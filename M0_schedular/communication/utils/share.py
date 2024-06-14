@@ -4,6 +4,7 @@ import time
 import struct
 
 # 日志输出到控制台
+logging.basicConfig(filename="M0-log.txt", filemode='a')
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
 ch = logging.StreamHandler()

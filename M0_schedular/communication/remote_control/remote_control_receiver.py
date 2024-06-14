@@ -31,19 +31,21 @@ def receive_instruction(buffer_size):
             # TODO(wangyuhang):星上时指令,写redis后续用于时间同步
             if ins_type == InstructionType.TIMER.value:
                 ins_type, time_s, time_ms = unpack_time_ins_packet(udp_packet)
-                LOGGER.info("收到星上时: time_s = {time_s} time_ms = {time_ms}")
+                LOGGER.info(f"收到星上时: time_s = {time_s} time_ms = {time_ms}")
 
             # 间接指令
             elif ins_type == InstructionType.INDIRECT_INS.value:
                 ins_type, instruction = unpack_udp_packet(udp_packet)
                 counter += 1
-                LOGGER.info(f"收到遥控指令：{Instruction(instruction).name} 指令码 {hex(instruction)} 计数器：{counter}")
+                LOGGER.info(f"收到遥控指令： 指令码 {instruction} 计数器：{counter}")
                 time_s, time_ms = get_timestamps()
                 write_instruction_to_redis(instruction, time_s, time_ms, counter)
                 if counter >= 255:
                     LOGGER("计数器清零")
                     counter= 0
-                execute_indirect_ins(instruction)
+                # execute_indirect_ins(instruction)
+        else:
+            print("received some other instruction")
 
 # 创建UDP套接字
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)    

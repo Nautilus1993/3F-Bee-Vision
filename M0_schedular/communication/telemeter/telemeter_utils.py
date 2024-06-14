@@ -146,7 +146,10 @@ def single_byte_checksum(data):
     print(f"数据长度 {len(data)} 校验和: {checksum}")
     return checksum
 
-
+def sync_time():
+    current_time = time.time()
+    next_second = current_time + 1 - (current_time % 1)
+    time.sleep(next_second - current_time)
 # def main():
 #     result = get_result_from_redis()
 #     print(result)

@@ -16,13 +16,14 @@ from utils.share import LOGGER, IP_ADDRESS, get_timestamps
 from remote_control.remote_control_utils import read_instruction_from_redis
 from telemeter_utils import SERVER_PORT, SERVER_IP_ADDR
 from telemeter_utils import get_result_from_redis, get_device_status, \
-    pack_telemeter_packet, format_telemeter, pack_udp_packet
+    pack_telemeter_packet, format_telemeter, pack_udp_packet, sync_time
 
 # TODO(wangyuhang):后面把串口的逻辑拆出这个模块
 SERIAL_PORT = '/dev/ttyXRUSB1'
 BRATE = 115200    
 
 def packup_telemetering_data(counter):
+    
     # 1. 组包时间
     time_s, time_ms = get_timestamps()
 
@@ -36,13 +37,16 @@ def packup_telemetering_data(counter):
     except TypeError:
         ins_counter = 0
         ins_code = 0x00
-
+    
     # 3. 获取设备状态[cpu, disk, memory]
+    
     sys_status = get_device_status() 
+    
+    
     
     # 4. yolo识别结果
     target, a1, a2, a3 = get_result_from_redis()
-
+    
     # 组装遥测帧
     telemeter_data = pack_telemeter_packet(
         counter,
@@ -59,12 +63,15 @@ def packup_telemetering_data(counter):
     format_telemeter(telemeter_data)
 
     udp_packet = pack_udp_packet(telemeter_data)
+    
+    
     return udp_packet
 
 
-def send_udp(counter):
+def send_udp(counter, interval):
     data = packup_telemetering_data(counter)
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    LOGGER.info(f"向IP {SERVER_IP_ADDR} Port {SERVER_PORT} 发送数据")
     sock.sendto(data, (SERVER_IP_ADDR, SERVER_PORT))
     # 关闭套接字
     sock.close()
@@ -86,10 +93,9 @@ def main():
         # 串口发送
         # send_serial(counter)
         # UDP发送
-        LOGGER.info(f"向IP {SERVER_IP_ADDR} Port {SERVER_PORT} 发送数据")
-        send_udp(counter)
+        send_udp(counter, 1)
         counter += 1
-        time.sleep(0.5)
+        sync_time()
 
 if __name__=="__main__":
     main()

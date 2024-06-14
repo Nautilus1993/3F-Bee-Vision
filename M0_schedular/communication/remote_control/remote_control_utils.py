@@ -19,7 +19,7 @@ from utils.docker_status import DockerComposeManager
 from message_config.udp_format import INDIRECT_INS_UDP_FORMAT, TIME_INS_FORMAT
 
 # 接收端的IP地址和端口号
-SERVER_PORT = 10090
+SERVER_PORT = 17777
 
 # REDIS
 REDIS = redis.Redis(host='127.0.0.1', port=6379)
