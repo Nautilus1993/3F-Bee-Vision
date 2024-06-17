@@ -27,23 +27,32 @@ sudo groupadd docker
 sudo usermod -aG docker username
 ```
 ### 构建镜像
-一共需要三个镜像
+一共需要三个镜像。构建2,3所用到的 base image比较大，建议先从902下载.tar文件，然后用下面这条命令导入：
+
+   ```bash
+   docker load -i [image_file]
+   ```
+然后用docker images查看后可以看到下面的信息：
+   ```bash
+   docker load -i [image_file]
+   ```
+
 1. redis:latest 
    可以在docker compose自动拉取，可能需要登录docker hub
    ```bash
    docker login -u username -p password
    ```
-2. orin_nano_messenger:20240122
+2. orin_nano_messenger:[tag]
    ```bash
    cd $DEV_WPRKSPACE/M0_schedular/docker/scheduler
-   docker build -t orin_nano_messenger:20240122 .
+   docker build -t orin_nano_messenger:[tag] .
    ```
-3. orin_nano_yolov5:20231128
+3. orin_nano_yolov5:[tag]
    ```bash
    cd $DEV_WPRKSPACE/M0_schedular/docker/yolov5-gpu
-   docker build -t orin_nano_yolov5:20231128 .
+   docker build -t orin_nano_yolov5:[tag] .
    ```
-
+请把上面命令中的[tag]换为打包镜像的时间戳，并相应调整docker-compose.yaml文件中的镜像名称。
 
 ### 启动服务
 

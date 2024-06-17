@@ -1,4 +1,0 @@
-INFO:utils.share:192.168.0.101 : 18089  开始接收图片...
-INFO:utils.share:共接收4096个分片
-INFO:utils.share:图片image_2262_900_2250.bmp 长度 4194304 bytes写入文件, winsize = (2048, 2048), window = (0, 0)
-INFO:utils.share:接收到Ctrl-C信号，关闭socket链接

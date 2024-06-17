@@ -68,6 +68,7 @@ def inference(img_grey):
     """
     img_h = img_grey.shape[0]
     img_w = img_grey.shape[1]
+    print(f"Line 71 img_h = {img_h}, img_w = {img_w}")
     img0 = cv2.cvtColor(img_grey, cv2.COLOR_GRAY2BGR)
 
     # Padded resize
@@ -232,7 +233,7 @@ weights = os.path.dirname(os.path.realpath(__file__)) + "/pt/best.pt"
 fl = 4648.540   # camera focal length
 camera_center = [1024, 1024]    # 原图大小：2048*2048
 img_size = 2048
-visualization = 1    # 0不可视化，1可视化
+visualization = 0    # 0不可视化，1可视化
 device = select_device('')
 model = attempt_load(weights, device=device)
 output_dir = 'output/'
@@ -262,58 +263,66 @@ sub = conn.pubsub()
 sub.subscribe("topic.img")
 logger.info("Receiving...")
 
-# 通过redis收图做预测
-for item in sub.listen():
-    if item['type'] == 'message':
-        logger.info(".-- .- -.. .-.. --- ...- . .-- ..-. -.--")
-        start_time = time.time()
-        # 收到图像数据解析
-        message_data = item['data']
-        message_dict = eval(message_data)  # Convert the string message back to a dictionary
+def main():
+    while True:
+        try:
+            # 通过redis收图做预测
+            for item in sub.listen():
+                if item['type'] == 'message':
+                    logger.info(".-- .- -.. .-.. --- ...- . .-- ..-. -.--")
+                    start_time = time.time()
+                    # 收到图像数据解析
+                    message_data = item['data']
+                    message_dict = eval(message_data)  # Convert the string message back to a dictionary
 
-        """message info:
-        message = {
-            'name': image_name,
-            'win_size': (2048, 2048),
-            'window': [win_x, win_y],
-            'data': encoded_img
-        }
-        """
-        img_name = message_dict['name']
-        win_width, win_height = message_dict['win_size']    # message_dict好像没有win_size这个属性，因此下面用了定值
-        [win_x, win_y] = message_dict['window']   # 开窗坐标系以左下角为原点
-        encoded_img = message_dict['data']
-        img_data = base64.b64decode(encoded_img)
-        nparr = np.frombuffer(img_data, np.uint8)
-        # img = np.resize(nparr,(img_size, img_size))
-        img = cv2.imdecode(nparr, 0) 
+                    """message info:
+                    message = {
+                        'name': image_name,
+                        'win_size': (2048, 2048),
+                        'window': [win_x, win_y],
+                        'data': encoded_img
+                    }
+                    """
+                    img_name = message_dict['name']
+                    win_width, win_height = message_dict['win_size']    # message_dict好像没有win_size这个属性，因此下面用了定值
+                    [win_x, win_y] = message_dict['window']   # 开窗坐标系以左下角为原点
+                    encoded_img = message_dict['data']
+                    img_data = base64.b64decode(encoded_img)
+                    nparr = np.frombuffer(img_data, np.uint8)
+                    print(f"win_w = {win_width} win_h = {win_height}")
+                    img = np.resize(nparr,(img_size, img_size))
+                    # img = cv2.imdecode(nparr, 0) 
 
-        # 根据窗口大小裁剪图像
-        win_img = img[img_size - win_y - win_height: img_size - win_y, win_x: win_x + win_width]
-        left_up_corner = [img_size - win_y - win_height, win_x]   # 开窗的左上角在原图中的坐标
-          
-        # 得到检测边界框数组
-        sat_bboxes = inference(win_img)    # [[x,y,w,h,p,c], [x,y,w,h,p,c], [x,y,w,h,p,c]]
+                    # 根据窗口大小裁剪图像
+                    win_img = img[img_size - win_y - win_height: img_size - win_y, win_x: win_x + win_width]
+                    left_up_corner = [img_size - win_y - win_height, win_x]   # 开窗的左上角在原图中的坐标
+                    
+                    # 得到检测边界框数组
+                    sat_bboxes = inference(win_img)    # [[x,y,w,h,p,c], [x,y,w,h,p,c], [x,y,w,h,p,c]]
 
-        for i in range(len(sat_bboxes)):
-            sat_bboxes[i][0] += left_up_corner[1]
-            sat_bboxes[i][1] += left_up_corner[0]
-        sat_angle_boxes = pos2angle(sat_bboxes, left_up_corner, camera_center)
+                    for i in range(len(sat_bboxes)):
+                        sat_bboxes[i][0] += left_up_corner[1]
+                        sat_bboxes[i][1] += left_up_corner[0]
+                    sat_angle_boxes = pos2angle(sat_bboxes, left_up_corner, camera_center)
 
-        # visualization
-        if visualization:
-            print('saving...')
-            boxed_img = draw_boxes(img, sat_bboxes, (512, 512))
-            cv2.imshow('image with boxes', boxed_img)
-            cv2.waitKey(0)
-            cv2.imwrite('output.jpg', boxed_img)
-            cv2.destroyAllWindows()
+                    # visualization
+                    if visualization:
+                        print('saving...')
+                        boxed_img = draw_boxes(img, sat_bboxes, (512, 512))
+                        cv2.imshow('image with boxes', boxed_img)
+                        cv2.waitKey(0)
+                        cv2.imwrite('output.jpg', boxed_img)
+                        cv2.destroyAllWindows()
 
-        
-        pub_result(sat_bboxes, sat_angle_boxes, img_name)    # pub by redis key sat_angle_det, category, angle_pitch, angle_azimuth, p, name
-        
-        # 日志记录检测框和耗时
-        
-        logger.info('angle_bbox: {}'.format(sat_angle_boxes))
-        logger.info("sat_bbox: {}".format(sat_bboxes))
-        logger.info("time_consuming: {:.4f} s".format(time.time()-start_time))
+                    
+                    pub_result(sat_bboxes, sat_angle_boxes, img_name)    # pub by redis key sat_angle_det, category, angle_pitch, angle_azimuth, p, name
+                    
+                    # 日志记录检测框和耗时
+                    
+                    logger.info('angle_bbox: {}'.format(sat_angle_boxes))
+                    logger.info("sat_bbox: {}".format(sat_bboxes))
+                    logger.info("time_consuming: {:.4f} s".format(time.time()-start_time))
+        except Exception as e:
+            print(e)     
+if __name__=="__main__":
+    main()
