@@ -14,8 +14,8 @@ ch.setFormatter(formatter)
 LOGGER.addHandler(ch)
 
 # TODO:本机IP，需要按实际情况修改
-# IP_ADDRESS = '127.0.0.1'
-IP_ADDRESS = '192.168.0.101'
+IP_ADDRESS = '127.0.0.1'
+# IP_ADDRESS = '192.168.0.101'
 
 # 根据配置文件生成UDP打包格式
 def generate_udp_format(config_file):

@@ -68,7 +68,6 @@ def inference(img_grey):
     """
     img_h = img_grey.shape[0]
     img_w = img_grey.shape[1]
-    print(f"Line 71 img_h = {img_h}, img_w = {img_w}")
     img0 = cv2.cvtColor(img_grey, cv2.COLOR_GRAY2BGR)
 
     # Padded resize
@@ -289,7 +288,6 @@ def main():
                     encoded_img = message_dict['data']
                     img_data = base64.b64decode(encoded_img)
                     nparr = np.frombuffer(img_data, np.uint8)
-                    print(f"win_w = {win_width} win_h = {win_height}")
                     img = np.resize(nparr,(img_size, img_size))
                     # img = cv2.imdecode(nparr, 0) 
 
@@ -313,7 +311,6 @@ def main():
                         cv2.waitKey(0)
                         cv2.imwrite('output.jpg', boxed_img)
                         cv2.destroyAllWindows()
-
                     
                     pub_result(sat_bboxes, sat_angle_boxes, img_name)    # pub by redis key sat_angle_det, category, angle_pitch, angle_azimuth, p, name
                     
@@ -323,6 +320,7 @@ def main():
                     logger.info("sat_bbox: {}".format(sat_bboxes))
                     logger.info("time_consuming: {:.4f} s".format(time.time()-start_time))
         except Exception as e:
-            print(e)     
+            print(e)   
+              
 if __name__=="__main__":
     main()
