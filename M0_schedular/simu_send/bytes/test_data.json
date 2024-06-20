@@ -1,0 +1,16 @@
+{
+    "schema": "Telemeter",
+    "fields": [
+        {
+            "name": "effect_length", 
+            "type": "uint16",
+            "description": "有效数据长度"
+        },
+        {
+            "name": "download_file_info", 
+            "type": "string",
+            "length": 8,
+            "description": "假数据，长度和上面的数值保持一致"
+        }
+    ]
+}

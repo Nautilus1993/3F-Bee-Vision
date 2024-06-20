@@ -1,0 +1,101 @@
+{
+    "schema": "Image",
+    "fields": [
+        {
+            "name": "frame_header", 
+            "id": 1,
+            "type": "uint16",
+            "description": "帧头"
+        },
+        {
+            "name": "data_length", 
+            "id": 2,
+            "type": "uint16",
+            "description": "数据长度"
+        },
+        {
+            "name": "frame_type",
+            "id": 3, 
+            "type": "uint8",
+            "description": "帧类型"
+        },
+        {
+            "name": "telemeter_type", 
+            "id": 4,
+            "type": "uint8",
+            "description": "遥测数据类型"
+        },
+        {
+            "name": "telemeter_num", 
+            "id": 5,
+            "type": "uint8",
+            "description": "遥测数据分类号"
+        },
+        {
+            "name": "image_counter", 
+            "id": 6,
+            "type": "uint8",
+            "description": "图像计数"
+        },
+        {
+            "name": "exposure",
+            "id": 7,
+            "type": "uint16",
+            "description": "曝光时间"
+        },
+        {
+            "name": "exposure_delay",
+            "id": 8,
+            "type": "uint8",
+            "description": "曝光间隔"
+        },
+        {
+            "name": "time_s",
+            "id": 9,
+            "type": "uint32",
+            "description": "图像拍摄时间戳秒"
+        },
+        {
+            "name": "time_ms",
+            "id": 10,
+            "type": "uint16",
+            "description": "图像拍摄时间戳毫秒"
+        },
+        {
+            "name": "window_y", 
+            "id": 11,
+            "type": "uint16",
+            "description": "开窗左下坐标y(行坐标)"
+        },
+        {
+            "name": "window_x", 
+            "id": 12,
+            "type": "uint16",
+            "description": "开窗左下坐标x(列坐标)"
+        },
+        {
+            "name": "window_width", 
+            "id": 13,
+            "type": "uint16",
+            "description": "开窗宽度"
+        },
+        {
+            "name": "window_height", 
+            "id": 14,
+            "type": "uint16",
+            "description": "开窗高度"
+        },
+        {
+            "name": "checksum", 
+            "id": 15,
+            "type": "uint16",
+            "description": "校验和"
+        },
+        {
+            "name": "frame_end", 
+            "id": 16,
+            "type": "uint16",
+            "description": "帧尾"
+        }
+    ]
+}
