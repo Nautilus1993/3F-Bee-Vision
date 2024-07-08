@@ -67,11 +67,16 @@ def receive_image(buffer_size):
                 # 按照chunk_seq组合有效数据部分
                 sorted_packets = [received_packets[i] for i in range(chunk_sum)]
                 image_data = b''.join(sorted_packets)
+                length = win_h * win_w
+                if(length <= len(image_data)):
+                    image_data = image_data[:length]
+                else:
+                    LOGGER.error("window size is too big!")
                 # 将图像名，图像时间戳，开窗位置返回给redis或写入文件
                 LOGGER.info(f"共接收{len(received_packets)}个分片")
                 # process_image_to_bin(image_data)
-                process_image_to_file(image_data, time_s, time_ms, exposure, win_w, win_h, win_x, win_y)
-                # process_image_to_redis(image_data, time_s, time_ms, win_w, win_h, win_x, win_y)
+                # process_image_to_file(image_data, time_s, time_ms, exposure, win_w, win_h, win_x, win_y)
+                process_image_to_redis(image_data, time_s, time_ms, win_w, win_h, win_x, win_y)
             # 如果未收到所有的包，则报丢包错误
             else:
                 LOGGER.error(f"还未收全，应收到 {chunk_sum}, 已收到 {len(received_packets)}")

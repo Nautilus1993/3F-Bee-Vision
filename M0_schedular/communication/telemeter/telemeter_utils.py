@@ -21,8 +21,8 @@ from system_usage import get_system_status
 from message_config.udp_format import TELEMETER_UDP_FORMAT
 
 # 发送端的IP地址和端口号
-SERVER_IP_ADDR = '192.168.0.103'
 SERVER_PORT = 18089
+SEND_IP = '192.168.0.103'
 
 # 获取系统状态
 def get_device_status():
@@ -120,7 +120,7 @@ def format_telemeter(udp_packet):
 
 def pack_udp_packet(telemeter_data):
     UDP_FORMAT = "!HB96s"
-    data_length = 97
+    data_length = 96
     data_type = 0x12
     udp_packet = struct.pack(UDP_FORMAT, 
         data_length, 

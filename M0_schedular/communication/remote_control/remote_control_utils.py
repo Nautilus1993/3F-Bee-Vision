@@ -14,6 +14,7 @@ sys.path.append(script_dir)
 
 # 加载docker client用于控制docker compose 服务
 from utils.docker_status import DockerComposeManager
+from utils.share import get_timestamps
 
 # 加载遥测数据格式配置文件,生成UDP包格式
 from message_config.udp_format import INDIRECT_INS_UDP_FORMAT, TIME_INS_FORMAT
@@ -30,6 +31,9 @@ LENGTH = 9
 SENDER_ID  = 0x55
 RECEIVER_ID = 0xAA
 
+TOPIC_TIME = 'queue.time' 
+MAX_LENGTH = 10
+
 
 """
     指令类型枚举值
@@ -42,7 +46,7 @@ class InstructionType(Enum):
     INJECT_DATA = 0x29      # 注入数据
 
 """
-    指令码枚举值
+    间接指令码枚举值
 """
 class Instruction(Enum):
     APP_START = 0xFED1
@@ -86,6 +90,36 @@ def unpack_time_ins_packet(udp_packet):
     _, _, _, ins_type, time_s, time_ms \
         = struct.unpack(TIME_INS_FORMAT, udp_packet)
     return ins_type, time_s, time_ms
+
+def write_time_to_redis(time_s, time_ms):
+    # 星上时时间戳，系统时间，两者差值
+        sys_time_s, sys_time_ms = get_timestamps()
+        timestamp = {
+            'time_s': time_s,
+            'time_ms': time_ms,
+            'sys_time_s': sys_time_s,
+            'sys_time_ms': sys_time_ms,
+            'delta_s': sys_time_s - time_s,
+            'delta_ms': sys_time_ms - time_ms
+        }
+        # 将消息推送到队列
+        REDIS.lpush(TOPIC_TIME, str(timestamp))
+        # 修剪队列长度
+        REDIS.ltrim(TOPIC_TIME, 0, MAX_LENGTH - 1)
+
+def sync_to_time():
+    """
+    read satellite time from redis, transfer current system time to satellite time
+    """
+    timestamp = REDIS.lrange(TOPIC_TIME,0, 0)
+    if not timestamp:
+        print("No time in redis")
+    sys_time_s, sys_time_ms = get_timestamps()
+    delta_s = timestamp['delta_s']
+    delta_ms = timestamp['delta_ms']
+    time_s = sys_time_s - delta_s
+    time_ms = sys_time_ms - delta_ms
+    return time_s, time_ms
 
 #收到的指令写入redis 
 def write_instruction_to_redis(instruction, time_s, time_ms, counter):

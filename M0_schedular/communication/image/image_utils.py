@@ -17,22 +17,14 @@ sys.path.append(parent_dir)
 sys.path.append(script_dir)
 from utils.share import LOGGER
 
-# 日志输出到控制台
-# LOGGER = logging.getLogger(__name__)
-# LOGGER.setLevel(logging.INFO)
-# ch = logging.StreamHandler()
-# ch.setLevel(logging.DEBUG)
-# formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-# ch.setFormatter(formatter)
-# LOGGER.addHandler(ch)
-
 # 接收端的IP地址和端口号
 RECV_PORT = 18089
 
 # 存储
 REDIS = redis.Redis(host='127.0.0.1', port=6379)
 IMAGE_DIR = os.path.dirname(os.path.abspath(__file__)) + "/received_images/"
-
+TOPIC_IMG_RAW = "topic.img_raw"
+TOPIC_IMG = "topic.img"
 
 # 后面按需替换
 SENDER_DEVICE = 0x00 # TODO:转发板设备ID
