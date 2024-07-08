@@ -14,7 +14,7 @@ sys.path.append(script_dir)
 
 from utils.share import LOGGER, IP_ADDRESS, get_timestamps
 from remote_control.remote_control_utils import read_instruction_from_redis
-from telemeter_utils import SERVER_PORT, SERVER_IP_ADDR
+from telemeter_utils import SERVER_PORT, SEND_IP
 from telemeter_utils import get_result_from_redis, get_device_status, \
     pack_telemeter_packet, format_telemeter, pack_udp_packet, sync_time
 
@@ -71,8 +71,8 @@ def packup_telemetering_data(counter):
 def send_udp(counter, interval):
     data = packup_telemetering_data(counter)
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    LOGGER.info(f"向IP {SERVER_IP_ADDR} Port {SERVER_PORT} 发送数据")
-    sock.sendto(data, (SERVER_IP_ADDR, SERVER_PORT))
+    LOGGER.info(f"向IP {SEND_IP} Port {SERVER_PORT} 发送数据")
+    sock.sendto(data, (SEND_IP, SERVER_PORT))
     # 关闭套接字
     sock.close()
 

@@ -232,7 +232,7 @@ weights = os.path.dirname(os.path.realpath(__file__)) + "/pt/best.pt"
 fl = 4648.540   # camera focal length
 camera_center = [1024, 1024]    # 原图大小：2048*2048
 img_size = 2048
-visualization = 0    # 0不可视化，1可视化
+visualization = 1    # 0不可视化，1可视化
 device = select_device('')
 model = attempt_load(weights, device=device)
 output_dir = 'output/'
@@ -283,16 +283,20 @@ def main():
                     }
                     """
                     img_name = message_dict['name']
-                    win_width, win_height = message_dict['win_size']    # message_dict好像没有win_size这个属性，因此下面用了定值
+                    win_width, win_height = message_dict['win_size']
                     [win_x, win_y] = message_dict['window']   # 开窗坐标系以左下角为原点
                     encoded_img = message_dict['data']
                     img_data = base64.b64decode(encoded_img)
                     nparr = np.frombuffer(img_data, np.uint8)
-                    img = np.resize(nparr,(img_size, img_size))
+                    # img = np.resize(nparr,(img_size, img_size))
+                    print('win_width:',win_width)
+                    img = np.resize(nparr,(win_width, win_height))  # received is small img   #TODO confirm x y order
+                    # img = cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)
                     # img = cv2.imdecode(nparr, 0) 
 
                     # 根据窗口大小裁剪图像
-                    win_img = img[img_size - win_y - win_height: img_size - win_y, win_x: win_x + win_width]
+                    # win_img = img[img_size - win_y - win_height: img_size - win_y, win_x: win_x + win_width]
+                    win_img = img
                     left_up_corner = [img_size - win_y - win_height, win_x]   # 开窗的左上角在原图中的坐标
                     
                     # 得到检测边界框数组
@@ -307,10 +311,10 @@ def main():
                     if visualization:
                         print('saving...')
                         boxed_img = draw_boxes(img, sat_bboxes, (512, 512))
-                        cv2.imshow('image with boxes', boxed_img)
-                        cv2.waitKey(0)
+                        # cv2.imshow('image with boxes', boxed_img)
+                        # cv2.waitKey(0)
                         cv2.imwrite('output.jpg', boxed_img)
-                        cv2.destroyAllWindows()
+                        # cv2.destroyAllWindows()
                     
                     pub_result(sat_bboxes, sat_angle_boxes, img_name)    # pub by redis key sat_angle_det, category, angle_pitch, angle_azimuth, p, name
                     

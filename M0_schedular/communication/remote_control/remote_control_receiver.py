@@ -10,7 +10,7 @@ sys.path.append(script_dir)
 from utils.share import LOGGER, IP_ADDRESS, get_timestamps
 from remote_control_utils import SERVER_PORT, Instruction, InstructionType, \
     unpack_udp_packet, write_instruction_to_redis, execute_indirect_ins, \
-    unpack_time_ins_packet
+    unpack_time_ins_packet, write_time_to_redis
 
 def receive_instruction(buffer_size):
     counter = 0
@@ -28,10 +28,11 @@ def receive_instruction(buffer_size):
             if ins_type == InstructionType.ASYNC_PKG.value:
                 pass
         elif len(udp_packet) == 11:
-            # TODO(wangyuhang):星上时指令,写redis后续用于时间同步
+            # 星上时指令,写redis后续用于时间同步
             if ins_type == InstructionType.TIMER.value:
                 ins_type, time_s, time_ms = unpack_time_ins_packet(udp_packet)
                 LOGGER.info(f"收到星上时: time_s = {time_s} time_ms = {time_ms}")
+                write_time_to_redis(time_s, time_ms)
 
             # 间接指令
             elif ins_type == InstructionType.INDIRECT_INS.value:

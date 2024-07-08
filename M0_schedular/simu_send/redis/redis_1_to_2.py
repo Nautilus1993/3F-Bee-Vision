@@ -132,8 +132,7 @@ def receive_redis_1(topic="topic.raw_img"):
     for message in pubsub.listen():
         if message['type'] == 'message':
             start_time = time.time()
-            # image_handler(message)
-            print("received message")
+            image_handler(message)
             # 记录程序结束时间
             end_time = time.time()
             # 计算程序运行时长

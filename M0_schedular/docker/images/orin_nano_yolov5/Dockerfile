@@ -6,4 +6,4 @@ COPY requirements.txt /tmp/requirements.txt
 RUN pip3 install -r /tmp/requirements.txt
 RUN pip3 install redis protobuf
 
-WORKDIR /usr/src/yolov5
+WORKDIR /usr/src/app

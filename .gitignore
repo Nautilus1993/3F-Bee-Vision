@@ -4,6 +4,9 @@
 # log
 *.log
 
+# python wheel
+*.whl
+
 # M1 quality evaluation results
 result.txt 
 
