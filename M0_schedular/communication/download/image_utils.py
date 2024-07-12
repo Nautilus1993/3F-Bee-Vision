@@ -5,7 +5,7 @@ import time
 import numpy as np
 import redis
 import base64
-import json
+import logging
 from PIL import Image
 
 import sys
@@ -23,7 +23,7 @@ RECV_PORT = 18089
 # 存储
 REDIS = redis.Redis(host='127.0.0.1', port=6379)
 IMAGE_DIR = os.path.dirname(os.path.abspath(__file__)) + "/received_images/"
-TOPIC_IMG_RAW = "topic.raw_img"
+TOPIC_IMG_RAW = "topic.img_raw"
 TOPIC_IMG = "topic.img"
 
 # 后面按需替换
@@ -104,8 +104,8 @@ def format_cameralink_header(cameralink_header):
     format_udp_packet(cameralink_header, config_file_path)
 
 # 将收到的图片发给redis
-def process_image_to_redis(image_data, time_s, time_ms, exposure, win_w, win_h, win_x, win_y):
-    image_name = f"image_{time_s}_{time_ms}_{exposure}.bmp"
+def process_image_to_redis(image_data, time_s, time_ms, win_w, win_h, win_x, win_y):
+    image_name = f"image_{time_s}_{time_ms}.bmp"
     # 转为Numpy bytes
     image_array = np.frombuffer(image_data, dtype=np.uint8) 
     encoded_img = base64.b64encode(image_array).decode('utf-8')    # serialize
@@ -116,8 +116,7 @@ def process_image_to_redis(image_data, time_s, time_ms, exposure, win_w, win_h, 
         'window': [win_x, win_y],
         'data': encoded_img
     }
-    json_str = json.dumps(message)
-    REDIS.publish(TOPIC_IMG_RAW, json_str)   
+    REDIS.publish("topic.img", str(message))   
     LOGGER.info(f"图片{image_name}写入redis")
 
 """

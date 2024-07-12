@@ -44,7 +44,7 @@ def receive_instruction(buffer_size):
                 if counter >= 255:
                     LOGGER("计数器清零")
                     counter= 0
-                # execute_indirect_ins(instruction)
+                execute_indirect_ins(instruction)
         else:
             print("received some other instruction")
 

@@ -26,5 +26,6 @@ CAMERALINK_HEADER_FORMAT = generate_udp_format(cameralink_config_file)
 indirect_ins_config_file = script_dir + "/indirect_ins_config.json"
 INDIRECT_INS_UDP_FORMAT = generate_udp_format(indirect_ins_config_file)
 
+# 加载星上时配置文件,生成UDP包格式
 time_ins_config_file = script_dir + "/time_ins_config.json"
 TIME_INS_FORMAT = generate_udp_format(indirect_ins_config_file)

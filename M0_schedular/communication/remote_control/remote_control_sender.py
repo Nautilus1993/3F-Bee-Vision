@@ -21,7 +21,7 @@ def send_remote_control_data(instruction):
     sock.close()
 
 def main():
-    instruction = Instruction.APP_STOP.value
+    instruction = Instruction.APP_START.value
     send_remote_control_data(instruction)
 
 if __name__=="__main__":
