@@ -1,0 +1,167 @@
+{
+    "schema": "Telemeter",
+    "fields": [
+        {
+            "name": "effect_length", 
+            "type": "uint16",
+            "id": 1, 
+            "description": "数据长度"
+        },
+        {
+            "name": "sender_id", 
+            "type": "uint8",
+            "id": 2, 
+            "description": "数据发送方"
+        },
+        {
+            "name": "receiver_id", 
+            "type": "uint8",
+            "id": 3, 
+            "description": "数据接收方"
+        },
+        {
+            "name": "instruction_type", 
+            "type": "uint8",
+            "id": 4, 
+            "description": "数据类型"
+        },
+        {
+            "name": "ins_wait_time", 
+            "type": "uint32",
+            "id": 5, 
+            "description": "指令时间码"
+        },
+        {
+            "name": "ins_code", 
+            "type": "uint8",
+            "id": 6, 
+            "description": "指令类型码"
+        },
+        {
+            "name": "params_count", 
+            "type": "uint8",
+            "id": 7, 
+            "description": "参数个数"
+        },
+        {
+            "name": "param_1_offset",
+            "type": "uint16",
+            "id":8,
+            "description": "参数1偏移量"
+        },
+        {
+            "name": "param_2_offset",
+            "type": "uint16",
+            "id":9,
+            "description": "参数2偏移量"
+        },
+        {
+            "name": "param_3_offset",
+            "type": "uint16",
+            "id":10,
+            "description": "参数3偏移量"
+        },
+        {
+            "name": "param_4_offset",
+            "type": "uint16",
+            "id":11,
+            "description": "参数4偏移量"
+        },
+        {
+            "name": "param_5_offset",
+            "type": "uint16",
+            "id":12,
+            "description": "参数5偏移量"
+        },
+        {
+            "name": "param_6_offset",
+            "type": "uint16",
+            "id":13,
+            "description": "参数6偏移量"
+        },
+        {
+            "name": "param_7_offset",
+            "type": "uint16",
+            "id":14,
+            "description": "参数7偏移量"
+        },
+        {
+            "name": "param_8_offset",
+            "type": "uint16",
+            "id":15,
+            "description": "参数8偏移量"
+        },
+        {
+            "name": "param_9_offset",
+            "type": "uint16",
+            "id":16,
+            "description": "参数9偏移量"
+        },
+        {
+            "name": "param_10_offset",
+            "type": "uint16",
+            "id":17,
+            "description": "参数10偏移量"
+        },
+        {
+            "name": "param_1_value",
+            "type": "uint32",
+            "id":18,
+            "description": "参数1数值"
+        },
+        {
+            "name": "param_2_value",
+            "type": "uint32",
+            "id":19,
+            "description": "参数2数值"
+        },
+        {
+            "name": "param_3_value",
+            "type": "uint32",
+            "id":20,
+            "description": "参数3数值"
+        },
+        {
+            "name": "param_4_value",
+            "type": "uint32",
+            "id":21,
+            "description": "参数4数值"
+        },
+        {
+            "name": "param_5_value",
+            "type": "uint32",
+            "id":22,
+            "description": "参数5数值"
+        },
+        {
+            "name": "param_6_value",
+            "type": "uint32",
+            "id":23,
+            "description": "参数6数值"
+        },
+        {
+            "name": "param_7_value",
+            "type": "uint32",
+            "id":24,
+            "description": "参数7数值"
+        },
+        {
+            "name": "param_8_value",
+            "type": "uint32",
+            "id":25,
+            "description": "参数8数值"
+        },
+        {
+            "name": "param_9_value",
+            "type": "uint32",
+            "id":26,
+            "description": "参数9数值"
+        },
+        {
+            "name": "param_10_value",
+            "type": "uint32",
+            "id":27,
+            "description": "参数10数值"
+        }
+    ]
+}
