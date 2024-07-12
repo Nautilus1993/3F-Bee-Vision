@@ -4,7 +4,7 @@ import time
 import struct
 
 # 日志输出到控制台
-logging.basicConfig(filename="M0-log.txt", filemode='a')
+# logging.basicConfig(filename="M0-log.txt", filemode='a')
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
 ch = logging.StreamHandler()
@@ -14,8 +14,8 @@ ch.setFormatter(formatter)
 LOGGER.addHandler(ch)
 
 # TODO:本机IP，需要按实际情况修改
-# IP_ADDRESS = '127.0.0.1'
-IP_ADDRESS = '192.168.0.101'
+IP_ADDRESS = '127.0.0.1'
+# IP_ADDRESS = '192.168.0.101'
 
 # 根据配置文件生成UDP打包格式
 def generate_udp_format(config_file):
