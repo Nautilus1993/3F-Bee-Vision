@@ -71,3 +71,13 @@ services:
     volumes:
       - $DEV_WORKSPACE/M2_detect/:/usr/src/app/
       - $DEVOPS_WORKSPACE/M2/:/usr/src/deploy/
+    
+  analyzer:
+    image: orin_nano_yolov5:20240617
+    runtime: nvidia
+    network_mode: "host"
+    container_name: M3_analyze
+    command: /usr/src/deploy/run.sh
+    volumes:
+      - $DEV_WORKSPACE/M3_analyze/:/usr/src/app/
+      - $DEVOPS_WORKSPACE/M3/:/usr/src/deploy/
