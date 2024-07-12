@@ -62,16 +62,16 @@
             "description": "图像拍摄时间戳毫秒"
         },
         {
-            "name": "window_y", 
+            "name": "window_x", 
             "id": 11,
             "type": "uint16",
-            "description": "开窗左下坐标y(行坐标)"
+            "description": "开窗左上坐标x"
         },
         {
-            "name": "window_x", 
+            "name": "window_y", 
             "id": 12,
             "type": "uint16",
-            "description": "开窗左下坐标x(列坐标)"
+            "description": "开窗左上坐标y"
         },
         {
             "name": "window_width", 

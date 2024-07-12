@@ -147,10 +147,10 @@ def execute_indirect_ins(instruction):
     print(hex(instruction))
     print(Instruction.APP_START.value)
     if instruction == Instruction.APP_START.value:
-        service_list = ['image_receiver', 'yolov5','quality']
+        service_list = ['image_receiver', 'yolov5']
         control_services(service_list, turn_on=True)
     elif instruction == Instruction.APP_STOP.value:
-        service_list = ['image_receiver', 'yolov5','quality']
+        service_list = ['image_receiver', 'yolov5']
         control_services(service_list, turn_on=False)
     else:
         print(f"执行指令{instruction}, 逻辑待实现...")

@@ -29,20 +29,22 @@ def thresh_mean(image_data):
     """
     nparr = np.frombuffer(image_data, np.uint8)
     # 定义采样点数
-    num_samples = 256 * 256
-
-    # 计算采样间隔
-    step = len(nparr) // num_samples
-
-    # 从数组中均匀采样
-    small_nparr = nparr[::step][:num_samples]
+    # print('nparr size:', nparr.size)
+    if nparr.size >= 256 * 256:
+        num_samples = 256 * 256
+        # 计算采样间隔
+        step = len(nparr) // num_samples
+        # 从数组中均匀采样
+        small_nparr = nparr[::step][:num_samples]
+    else:
+        small_nparr = nparr
     threshold = np.mean(small_nparr)
     img_thresh = np.where(small_nparr <= threshold, 0, small_nparr)
     # 统计大于阈值像素的亮度均值
     pix_nums = np.sum(img_thresh > 0)
     print(pix_nums)
     value = float(np.sum(img_thresh) / pix_nums)
-    score = abs(value - 90)
+    score = abs(value - 130)  # human best exposure
     return value, score
 
 def add_buffer(image_name, image_data, time_s, time_ms, score=thresh_mean):
@@ -87,8 +89,8 @@ def extract_timestamp(filename):
     """
     try:
         split_strings = filename.split("_")
-        time_s = int(split_strings[0])
-        time_ms = int(split_strings[1])
+        time_s = int(split_strings[1])
+        time_ms = int(split_strings[2])
         return time_s, time_ms
     except ValueError:
         print(f"无法解析文件名：{filename}")
@@ -112,7 +114,7 @@ def image_handler(message):
         if(is_buffer_ready(time_s)):
             best_image = process_buffer()
             print(f"最好图像为 {best_image.name} 亮度{best_image.value}")
-            send_redis_2(best_image)
+            send_redis_2(best_image, win_w, win_h, win_x, win_y)
 
         add_buffer(image_name, image_data, time_s, time_ms)
         
@@ -140,11 +142,11 @@ def receive_redis_1(topic="topic.raw_img"):
             print(f"图片处理时长：{duration:.2f} 秒 ")
 
 # 筛选后的图片发送到redis_2接口
-def send_redis_2(raw_image):
+def send_redis_2(raw_image, win_w, win_h, win_x, win_y):
     message = {
             'name': raw_image.name,
-            'win_size': (2048, 2048),   # 不开窗
-            'window': [0, 0],
+            'win_size': (win_w, win_h), 
+            'window': [win_x, win_y],
             'data': raw_image.data
         }
     
