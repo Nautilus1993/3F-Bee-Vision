@@ -290,9 +290,9 @@ def main():
                     nparr = np.frombuffer(img_data, np.uint8)
                     # img = np.resize(nparr,(img_size, img_size))
                     print('win_width:',win_width)
-                    img = np.resize(nparr,(win_height, win_width))  # received is small img   #TODO confirm x y order
+                    # img = np.resize(nparr,(win_width, win_height))  # received is small img   #TODO confirm x y order
                     # img = cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)
-                    # img = cv2.imdecode(nparr, 0) 
+                    img = cv2.imdecode(nparr, 0) 
 
                     # 根据窗口大小裁剪图像
                     # win_img = img[img_size - win_y - win_height: img_size - win_y, win_x: win_x + win_width]
