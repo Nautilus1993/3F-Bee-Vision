@@ -25,5 +25,9 @@ INDIRECT_INS_UDP_FORMAT = generate_udp_format(script_dir + "/indirect_ins_config
 # 加载星上时配置文件,生成UDP包格式
 TIME_INS_FORMAT = generate_udp_format(script_dir + "/time_ins_config.json")
 
-# 加载星上时配置文件,生成UDP包格式
+# 生成UDP包格式
 INJECT_DATA_IMAGE_FORMAT = generate_udp_format(script_dir + "/inject_data_image.json")
+
+# 加载文件低速下行异步包配置文件,生成UDP包格式
+file_down_config_file = script_dir + "/file_down_config.json"
+FILE_DOWN_FORMAT = generate_udp_format(file_down_config_file)
