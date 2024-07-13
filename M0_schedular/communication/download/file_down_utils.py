@@ -27,56 +27,45 @@ TOPIC_IMG_RAW = "topic.img_raw"
 TOPIC_IMG = "topic.img"
 
 # 后面按需替换
-SENDER_DEVICE = 0x00 # TODO:转发板设备ID
-RECV_DEVICE = 0x01   # TODO: AI计算机设备ID
-EXPOSE = 0x03 
-WINDOW_SIZE = 0   # TODO 后面需要根据收包内容更改
+FILE_IMAGE = 0x00 # TODO:图片文件
+FILE_LOG = 0xaa   # TODO:日志文件
+
 
 # 数据分片大小
-CHUNK_SIZE = 1024
-HEADER_SIZE = 28 # TODO：暂时只加包序号调通代码
-IMAGE_SIZE = 4195382 # 图片大小 2048.bmp
+CHUNK_SIZE = 93
+HEADER_SIZE = 11 # TODO：暂时只加包序号调通代码
 
-# 图像UDP包格式
-# https://docs.python.org/3/library/struct.html#format-characters
-from message_config.udp_format import IMAGE_UDP_FORMAT, CAMERALINK_HEADER_FORMAT
 
-from utils.share import get_timestamps
+
+from message_config.udp_format import FILE_DOWN_FORMAT
+
+# from utils.share import get_timestamps
 
 # 封装图像UDP包
-def pack_udp_packet(time_s, time_ms, window, chunk_sum, chunk_seq, image_chunk):
-    # 补全数据域为1024定长
-    byte_array = bytearray(b'0' * 1024)
-    byte_array[:len(image_chunk)] = image_chunk
-    
+def pack_udp_packet(file_type, chunk_sum, chunk_seq, file_chunk):
+    # 补全数据域为CHUNK_SIZE Byte定长
+    byte_array = bytearray(b'0' * CHUNK_SIZE)
+    byte_array[:len(file_chunk)] = file_chunk
     udp_packet = struct.pack(
-        IMAGE_UDP_FORMAT,             
-        len(image_chunk),       # 1. 有效数据长度
-        SENDER_DEVICE,          # 2. 发送方
-        RECV_DEVICE,            # 3. 接收方
-        time_s,                 # 4. 时间戳秒
-        time_ms,                # 5. 时间戳毫秒
-        EXPOSE,                 # 6. 曝光参数
-        chunk_sum,              # 7. 分片数量
-        chunk_seq,              # 8. 包序号
-        window[0],              # 9. 开窗宽度w
-        window[1],              # 10. 开窗高度h
-        window[2],              # 11. 开窗左下坐标x
-        window[3],              # 12. 开窗左下坐标y
-        bytes(byte_array)       # 13. 数据域
+        FILE_DOWN_FORMAT,        # 0. UDP包格式
+        file_type,               # 1. 文件类型
+        len(file_chunk),         # 2. 有效数据长度
+        chunk_sum,               # 3. 分片数量
+        chunk_seq,               # 4. 包序号
+        bytes(byte_array)        # 5. 数据域
     )
     return udp_packet
 
-# 解析图像UDP包
+# 解析文件UDP包
 def unpack_udp_packet(udp_packet):
-    effect_len, _, _, \
-    time_s, time_ms, _, \
-    chunk_sum, chunk_seq, \
-    win_w, win_h, win_x, win_y, \
-    image_chunk \
-    = struct.unpack(IMAGE_UDP_FORMAT, udp_packet)
-    # return time_s, time_ms, win_w, win_h, win_x, win_y, chunk_sum, chunk_seq, image_chunk[:effect_len]
-    return time_s, time_ms, win_w, win_h, win_x, win_y, chunk_sum, chunk_seq, image_chunk
+    file_type, \
+    effect_len, \
+    chunk_sum, \
+    chunk_seq, \
+    file_chunk \
+    = struct.unpack(FILE_DOWN_FORMAT, udp_packet)
+
+    return file_type, effect_len, chunk_sum, chunk_seq, file_chunk
 
 # 解析cameralink首帧数据
 def unpack_cameralink_header(cameralink_header):
@@ -88,12 +77,19 @@ def unpack_cameralink_header(cameralink_header):
     win_w, win_h, _, _ \
      = struct.unpack(CAMERALINK_HEADER_FORMAT, cameralink_header)
     return time_s, time_ms, exposure, win_w, win_h, win_x, win_y
-    
+
+# 解析FILE_DOWN首帧数据
+def unpack_file_down_header(file_down_header):
+    if len(file_down_header) != 11:
+        LOGGER.warning("file_down帧头数据长度有误！")
+    file_type, _, _, _, _ = struct.unpack(FILE_DOWN_FORMAT, file_down_header)
+    return 
+
 
 from utils.share import format_udp_packet
 # 打印图像UDP数据包
-def format_image_udp_packet(udp_packet):
-    config_file = 'image_config.json'
+def format_file_udp_packet(udp_packet):
+    config_file = 'file_down_config.json'
     config_file_path = parent_dir + "/message_config/" + config_file
     format_udp_packet(udp_packet, config_file_path)
 
@@ -132,8 +128,7 @@ def format_bytes_stream(byte_stream):
             formatted_stream += "\n"
     return formatted_stream
 
-def process_image_to_bin(image_data):
-    time_s, time_ms = get_timestamps()
+def process_file_to_bin(image_data):
     file_name = f"raw_{time_s}_{time_ms}.bmp"
     with open(file_name, 'wb') as file:
         formated_bytes = format_bytes_stream(image_data)
@@ -198,3 +193,27 @@ def crop_image(w, h, x, y, image_name) -> np.array:
     cropped_image = origin_image.crop((x_left, y_top, x_right, y_bottom))
     image_array = np.array(cropped_image)
     return image_array
+
+
+# jpeg2000编码
+def jpeg2000_encode(image_data):
+    # 读取图像并压缩为JPEG2000格式
+    image = iio.imread('image_path')
+    # compressed_image_path = 'compressed.jp2'
+    # iio.BytesIO(compressed_image_path, image, format='jp2')
+    compressed_data = iio.BytesIO(image, format='jp2')
+    # with open(compressed_image_path, 'rb') as f:
+    #     compressed_data = f.read()
+    return compressed_data
+
+
+
+# jpeg2000解码
+def jpeg2000_decode(compressed_data):
+    # 读取压缩文件并解码为图像
+    # compressed_image_path = 'compressed.jp2'
+    # with open(compressed_image_path, 'wb') as f:
+    #     f.write(compressed_data)
+    # image = iio.imread(compressed_image_path)
+    image = iio.imread(compressed_data)
+    return image
