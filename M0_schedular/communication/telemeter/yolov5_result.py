@@ -51,7 +51,7 @@ def format_angle(angle_result):
 """
 def get_result_from_redis():
     # json加载失败或第一个识别结果置信度为0时，返回empty_result
-    empty_result = Target.NONE.value, [0xFF,0,0,0], [0xFF,0,0,0], [0xFF,0,0,0]
+    empty_result = Target.NONE.value, [0xFF,0xFF,0xFF,0xFF], [0xFF,0xFF,0xFF,0xFF], [0xFF,0xFF,0xFF,0xFF]
     serialized_data = REDIS.get(TOPIC_ANGLE)
     if serialized_data == None:
         return empty_result
@@ -72,25 +72,38 @@ def get_result_from_redis():
     if target == Target.SINGLE.value:     # L形，只返回一个帆板
         panel_1 = format_angle(data['angle1'])
         panel_1[0] = 0x55
-        main_body = [0xFF,0,0,0]
-        panel_2 = [0xFF,0,0,0]
+        main_body = [0xFF,0xFF,0xFF,0xFF]
+        panel_2 = [0xFF,0xFF,0xFF,0xFF]
     elif target == Target.BALL.value:     # 球形，只返回一个主体
         main_body = format_angle(data['angle1'])
         main_body[0] = 0x55
-        panel_1 = [0xFF,0,0,0]
-        panel_2 = [0xFF,0,0,0]
+        panel_1 = [0xFF,0xFF,0xFF,0xFF]
+        panel_2 = [0xFF,0xFF,0xFF,0xFF]
     elif target == Target.DOUBLE.value:   # 双翼，返回主体和两个结果
         main_body = format_angle(data['angle1'])
-        main_body[0] = 0x55
+        if main_body[3] == 0:
+            main_body = [0xFF,0xFF,0xFF,0xFF]
+        else:
+            main_body[0] = 0x55
         panel_1 = format_angle(data['angle2'])
-        panel_1[0] = 0x55
+        if panel_1[3] == 0:
+            panel_1 = [0xFF,0xFF,0xFF,0xFF]
+        else:
+            panel_1[0] = 0x55
         panel_2 = format_angle(data['angle3'])
-        panel_2[0] = 0x55
+        if panel_2[3] == 0:
+            panel_2 = [0xFF,0xFF,0xFF,0xFF]
+        else:
+            panel_2[0] = 0x55
     else:
         print("category value error")
         return empty_result
 
-    return target, main_body, panel_1, panel_2
+    image_name = data['name']
+    image_time_s = int(image_name.split('_')[1])
+    image_time_ms = int(image_name.split('_')[2])
+
+    return target, main_body, panel_1, panel_2, image_time_s, image_time_ms
 
 def main():
     result = get_result_from_redis()

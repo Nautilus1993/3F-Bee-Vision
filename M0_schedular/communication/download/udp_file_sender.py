@@ -21,6 +21,16 @@ from file_down_utils import RECV_PORT, pack_udp_packet, crop_image
 CHUNK_SIZE = 93           # 图片分片长度
 
 
+
+# test
+IP_ADDRESS = '127.0.0.1'
+
+
+
+
+
+
+
 def send_file_data(file_type, file_data):
     # 创建UDP套接字
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
