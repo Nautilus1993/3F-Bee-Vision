@@ -33,8 +33,8 @@ def get_device_status():
 
 def get_yolov5_result():
     # TODO(wangyuhang):增加判断数据合法性的逻辑
-    target, angle_1, angle_2, angle_3 = get_result_from_redis()
-    return target, angle_1, angle_2, angle_3
+    target, angle_1, angle_2, angle_3, image_time_s, image_time_ms = get_result_from_redis()
+    return target, angle_1, angle_2, angle_3, image_time_s, image_time_ms
     
 
 def fake_result_from_redis():
@@ -64,13 +64,13 @@ def generate_incrementing_bytes(length):
     """
     return bytes([i % 256 for i in range(length)])
 
-fake_string_11_26 = generate_incrementing_bytes(30)
+# fake_string_11_26 = generate_incrementing_bytes(30)
 fake_string_40_50 = generate_incrementing_bytes(20)
 
 """
     UDP 解析和组包 
 """
-def pack_telemeter_packet(c1, c2, ins_code, time_s, time_ms, target, t1, t2, t3, sys_status):
+def pack_telemeter_packet(c1, c2, ins_code, time_s, time_ms, target, t1, t2, t3, sys_status, image_time_s, image_time_ms):
     udp_packet = struct.pack(TELEMETER_UDP_FORMAT, 
         time_s,             # 1. 组包时间秒
         time_ms,            # 2. 组包时间毫秒
@@ -81,8 +81,23 @@ def pack_telemeter_packet(c1, c2, ins_code, time_s, time_ms, target, t1, t2, t3,
         sys_status[0],      # 7. CPU占用率
         sys_status[1],      # 8. 磁盘占用率
         sys_status[2],      # 9. 内存占用率
-        0,                  # 10. AI计算机功率(TODO)
-        fake_string_11_26,  # 11-26: 共30Bytes待开发
+        0x00,               # 10. AI计算机功率(TODO)
+        0x00,               # 11. 软件基础模块运行状态
+        0x00,               # 12. 算法模块运行状态
+        0x00,               # 13. 图像接收状态码
+        0,                  # 14. 图像1接收时延
+        0,                  # 15. 图像2接收时延
+        0,                  # 16. 图像3接收时延
+        0,                  # 17. 图像4接收时延
+        0,                  # 18. 筛选图像总数
+        0,                  # 19. 当前识别图像质量指标（亮度）
+        image_time_s,       # 20. 当前识别图像时间戳秒
+        image_time_ms,      # 21. 当前识别图像时间戳毫秒
+        0,                  # 22. 当前识别图像曝光时长
+        0,                  # 23. 当前识别图像开窗宽度w
+        0,                  # 24. 当前识别图像开窗高度h
+        0,                  # 25. 当前识别图像开窗位置x
+        0,                  # 26. 当前识别图像开窗位置y
         target,             # 27. BB类别
         t1[0],              # 28. 主体 识别结果
         t1[1],              # 29. 主体 方位角

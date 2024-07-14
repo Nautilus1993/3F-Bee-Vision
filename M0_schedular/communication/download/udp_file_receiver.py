@@ -15,6 +15,12 @@ from file_down_utils import unpack_udp_packet, process_image_to_file, process_im
 from file_down_utils import CHUNK_SIZE, HEADER_SIZE, RECV_PORT
 from file_down_utils import format_file_udp_packet
 
+
+#test
+IP_ADDRESS = '127.0.0.1'
+
+
+
 def receive_file(buffer_size):
     # UDP包缓存：以包序号为key存储UDP包中的有效数据
     received_packets = {}
@@ -25,9 +31,10 @@ def receive_file(buffer_size):
         if len(udp_packet) != HEADER_SIZE + CHUNK_SIZE:
             LOGGER.warning(f"收到的文件UDP包长度有误！{len(udp_packet)}")
             continue
+        print(unpack_udp_packet(udp_packet))
         
         # 长度正确则调用UDP解析函数
-        file_type, \
+        file_type, _,\
         chunk_sum, \
         chunk_seq, \
         file_chunk = unpack_udp_packet(udp_packet)
@@ -66,7 +73,7 @@ def receive_file(buffer_size):
 
         # Case3:中间帧
         elif chunk_seq not in received_packets:
-            received_packets[chunk_seq] = image_chunk
+            received_packets[chunk_seq] = file_chunk
         else:
             LOGGER.error(f"包序号为{chunk_seq}的包已在缓存中，UDP包乱序发送")
             #丢弃乱序的后来帧
