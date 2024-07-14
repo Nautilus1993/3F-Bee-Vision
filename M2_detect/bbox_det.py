@@ -169,26 +169,22 @@ def inference(img_grey):
 
     return result_bbox
 
-def pos2angle(bbox, left_up_corner, camera_center):
+def pos2angle(bbox, camera_center):
     """
     Args:
         bbox = [[], [], []]
-        left_up_corner
+        up_left_corner
         camera_center
     Output: angles = [[pitch, yaw], [], []]
     """
     sat_angle_boxes = []
     for sat_bbox in bbox:
-        # 得到检测框中心在全图中的坐标
+        # 得到检测框中心在全图中的坐标，行h，列w
         sat_bbox_center = [sat_bbox[1]+sat_bbox[3]/2, sat_bbox[0]+sat_bbox[2]/2] 
 
-        # 计算检测框中心坐标在全图中的坐标
-        # sat_bbox_center[0] = sat_bbox_center[0] + left_up_corner[0]
-        # sat_bbox_center[1] = sat_bbox_center[1] + left_up_corner[1]
-
         # 计算相机中心与检测框中心的偏移角度
-        dh = camera_center[0] - sat_bbox_center[0]  # h方向偏移量，大于0仰视
-        dw = sat_bbox_center[1] - camera_center[1]  # w方向偏移量，大于0右侧
+        dh = sat_bbox_center[0] - camera_center[1]  # h方向偏移量，低头为正
+        dw = camera_center[0] - sat_bbox_center[1]  # w方向偏移量，左偏为正
 
         angle_pitch = np.arctan(dh/fl) * 180 / np.pi    # 俯仰角，俯视为负， -90~90
         angle_yaw = np.arctan(dw/fl) * 180 / np.pi  # 方位角，左侧为负， -180~180
@@ -230,7 +226,7 @@ def pub_result(sat_bboxes, sat_angle_boxes, img_name):
 # config
 weights = os.path.dirname(os.path.realpath(__file__)) + "/pt/best.pt"
 fl = 4648.540   # camera focal length
-camera_center = [1024, 1024]    # 原图大小：2048*2048
+camera_center = [1004.19, 1054.44]    # 光心标定 X_0 Y_0
 img_size = 2048
 visualization = 1    # 0不可视化，1可视化
 device = select_device('')
@@ -284,28 +280,26 @@ def main():
                     """
                     img_name = message_dict['name']
                     win_width, win_height = message_dict['win_size']
-                    [win_x, win_y] = message_dict['window']   # 开窗坐标系以左下角为原点
+                    [win_x, win_y] = message_dict['window']   # 开窗坐标系以左上角为原点，往右为X，往下为Y
                     encoded_img = message_dict['data']
                     img_data = base64.b64decode(encoded_img)
                     nparr = np.frombuffer(img_data, np.uint8)
-                    # img = np.resize(nparr,(img_size, img_size))
                     print('win_width:',win_width)
-                    # img = np.resize(nparr,(win_width, win_height))  # received is small img   #TODO confirm x y order
+                    img = np.resize(nparr,(win_height, win_width))  # received is small img   #TODO confirm x y order
                     # img = cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)
-                    img = cv2.imdecode(nparr, 0) 
+                    # img = cv2.imdecode(nparr, 0) 
 
-                    # 根据窗口大小裁剪图像
-                    # win_img = img[img_size - win_y - win_height: img_size - win_y, win_x: win_x + win_width]
+                    # 得到小图的左上角在大图中的
                     win_img = img
-                    left_up_corner = [img_size - win_y - win_height, win_x]   # 开窗的左上角在原图中的坐标
+                    up_left_corner = [win_y, win_x]   # 开窗的左上角在原图中的坐标, 行 列 坐标
                     
                     # 得到检测边界框数组
                     sat_bboxes = inference(win_img)    # [[x,y,w,h,p,c], [x,y,w,h,p,c], [x,y,w,h,p,c]]
 
                     for i in range(len(sat_bboxes)):
-                        sat_bboxes[i][0] += left_up_corner[1]
-                        sat_bboxes[i][1] += left_up_corner[0]
-                    sat_angle_boxes = pos2angle(sat_bboxes, left_up_corner, camera_center)
+                        sat_bboxes[i][0] += up_left_corner[1]
+                        sat_bboxes[i][1] += up_left_corner[0]
+                    sat_angle_boxes = pos2angle(sat_bboxes, camera_center)
 
                     # visualization
                     if visualization:
