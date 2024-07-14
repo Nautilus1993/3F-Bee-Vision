@@ -20,9 +20,10 @@ class Target(Enum):
     部件类别枚举值
 """
 class Category(Enum):
-    NONE = 0x00     # 无效
-    CABIN = 0x01    # 主体
-    PANEL = 0x02    # 帆板
+    NONE = 0xFF     # 无效
+    GOOD = 0x55     # 正常
+    # CABIN = 0x01    # 主体
+    # PANEL = 0x02    # 帆板
 
 """
     Redis中的数值转化为遥测数据类型
@@ -50,7 +51,7 @@ def format_angle(angle_result):
 """
 def get_result_from_redis():
     # json加载失败或第一个识别结果置信度为0时，返回empty_result
-    empty_result = Target.NONE.value, [0,0,0,0], [0,0,0,0], [0,0,0,0]
+    empty_result = Target.NONE.value, [0xFF,0,0,0], [0xFF,0,0,0], [0xFF,0,0,0]
     serialized_data = REDIS.get(TOPIC_ANGLE)
     if serialized_data == None:
         return empty_result
@@ -70,16 +71,21 @@ def get_result_from_redis():
     # 由第一个结果的category数值，可以判断当前BB的类别
     if target == Target.SINGLE.value:     # L形，只返回一个帆板
         panel_1 = format_angle(data['angle1'])
-        main_body = [0,0,0,0]
-        panel_2 = [0,0,0,0]
+        panel_1[0] = 0x55
+        main_body = [0xFF,0,0,0]
+        panel_2 = [0xFF,0,0,0]
     elif target == Target.BALL.value:     # 球形，只返回一个主体
         main_body = format_angle(data['angle1'])
-        panel_1 = [0,0,0,0]
-        panel_2 = [0,0,0,0]
+        main_body[0] = 0x55
+        panel_1 = [0xFF,0,0,0]
+        panel_2 = [0xFF,0,0,0]
     elif target == Target.DOUBLE.value:   # 双翼，返回主体和两个结果
         main_body = format_angle(data['angle1'])
+        main_body[0] = 0x55
         panel_1 = format_angle(data['angle2'])
+        panel_1[0] = 0x55
         panel_2 = format_angle(data['angle3'])
+        panel_2[0] = 0x55
     else:
         print("category value error")
         return empty_result
