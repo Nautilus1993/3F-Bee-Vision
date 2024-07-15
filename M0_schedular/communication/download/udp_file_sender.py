@@ -2,9 +2,7 @@ import sys
 import socket
 import os
 import time
-from io import BytesIO
 from PIL import Image
-import imageio.v3 as iio
 import numpy as np
 
 # 获取当前脚本文件所在的目录路径
@@ -17,6 +15,7 @@ sys.path.append(script_dir)
 # Add the parent directory to the sys.path list
 from utils.share import LOGGER, IP_ADDRESS
 from file_down_utils import RECV_PORT, pack_udp_packet, crop_image
+from file_down_utils import jpeg2000_encode
 
 CHUNK_SIZE = 93           # 图片分片长度
 
@@ -66,25 +65,6 @@ def send_file_data(file_type, file_data):
     sock.close()
 
 
-##############################################IMAGE FILE###############################################
-
-
-
-
-def jpeg2000_encode(image_data):
-    # 读取图像并压缩为JPEG2000格式
-    image = iio.imread('./test_images/xingmin.bmp')
-    image_np = np.array(image)
-    buffer = BytesIO()
-    iio.imwrite(buffer ,image, format='jpeg')
-    compressed_data = buffer.getvalue()
-    # with open(compressed_image_path, 'rb') as f:
-    #     compressed_data = f.read()
-    return compressed_data
-
-
-
-
 
 #################################################TEST#################################################
 
@@ -104,7 +84,7 @@ def send_window(window, image_file):
     # image_bytes = image_array.tobytes()
     image_bytes = jpeg2000_encode(image_array)
     print(len(image_bytes))
-    send_file_data(0xaa, image_bytes)
+    send_file_data(0x00, image_bytes)
 
 def main():
     for window in test_cases:

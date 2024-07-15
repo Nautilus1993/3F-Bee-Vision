@@ -7,6 +7,8 @@ import redis
 import base64
 import logging
 from PIL import Image
+import imageio.v3 as iio
+from io import BytesIO
 
 import sys
 # 获取当前脚本文件所在的目录路径
@@ -134,15 +136,16 @@ def process_file_to_bin(image_data):
         file.write(image_data)
 
 # 将收到的图片存储为文件
-def process_image_to_file(image_data, time_s, time_ms, exposure, win_w, win_h, win_x, win_y):
+def process_image_to_file(image_data):
     # image_name = f"image_{time_s}_{time_ms}_{exposure}.bmp"
     image_name = "output.bmp"
-    LOGGER.info(f"图片{image_name} 长度 {len(image_data)} bytes写入文件, winsize = ({win_w}, {win_h}), window = ({win_x}, {win_y})")
+    LOGGER.info(f"图片{image_name} 长度 {len(image_data)} bytes写入文件")
+    image = jpeg2000_decode(image_data)
+    iio.imwrite(image_name, image)
 
     # 转为Numpy bytes
-    image_array = np.frombuffer(image_data, dtype=np.uint8) 
-    image_array.resize(win_h, win_w)
-    cv2.imwrite(os.path.join(IMAGE_DIR, image_name), image_array)
+    # image_array = np.frombuffer(image_data, dtype=np.uint8)
+    # cv2.imwrite(os.path.join(IMAGE_DIR, image_name), image_array)
     # LOGGER.info(f"图片{image_name}写入文件, winsize = ({win_w}, {win_h}), window = ({win_x}, {win_y})")
 
 def write_to_bytes(bytes_string, file_name):
@@ -194,13 +197,13 @@ def crop_image(w, h, x, y, image_name) -> np.array:
     return image_array
 
 
-# jpeg2000编码
 def jpeg2000_encode(image_data):
     # 读取图像并压缩为JPEG2000格式
-    image = iio.imread('image_path')
-    # compressed_image_path = 'compressed.jp2'
-    # iio.BytesIO(compressed_image_path, image, format='jp2')
-    compressed_data = iio.BytesIO(image, format='jp2')
+    image = iio.imread('./test_images/xingmin.bmp')
+    image_np = np.array(image)
+    buffer = BytesIO()
+    iio.imwrite(buffer ,image, format='jpeg')
+    compressed_data = buffer.getvalue()
     # with open(compressed_image_path, 'rb') as f:
     #     compressed_data = f.read()
     return compressed_data

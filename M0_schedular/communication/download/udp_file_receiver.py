@@ -15,7 +15,6 @@ from file_down_utils import unpack_udp_packet, process_image_to_file, process_im
 from file_down_utils import CHUNK_SIZE, HEADER_SIZE, RECV_PORT
 from file_down_utils import format_file_udp_packet
 from file_down_utils import FILE_IMAGE, FILE_LOG
-
 #test
 IP_ADDRESS = '127.0.0.1'
 
@@ -31,7 +30,7 @@ def receive_file(buffer_size):
         if len(udp_packet) != HEADER_SIZE + CHUNK_SIZE:
             LOGGER.warning(f"收到的文件UDP包长度有误！{len(udp_packet)}")
             continue
-        print(unpack_udp_packet(udp_packet))
+        # print(unpack_udp_packet(udp_packet))
         
         # 长度正确则调用UDP解析函数
         file_type, _,\
@@ -55,6 +54,7 @@ def receive_file(buffer_size):
 
         # Case2: 尾帧
         elif chunk_seq == (chunk_sum - 1):
+            received_packets[chunk_seq] = file_chunk
             # 如果已收到所有的包，组包存储到文件或redis
             if len(received_packets) == chunk_sum:
                 LOGGER.info(f"共接收{len(received_packets)}个分片")
@@ -63,7 +63,6 @@ def receive_file(buffer_size):
                 LOGGER.error(f"还未收全，应收到 {chunk_sum}, 已收到 {len(received_packets)}")
             
             # 无论是否丢包，尝试拼接文件
-            file_type = received_packets[0].file_type
             stitching_packets(file_type, received_packets)
             
             # 清空UDP包缓存
@@ -84,8 +83,10 @@ def stitching_packets(file_type, received_packets):
     sorted_packets = [received_packets[i] for i in range(len(received_packets)) if i in received_packets]
     file_data = b''.join(sorted_packets)
     if file_type == FILE_IMAGE:
+        print('处理图片')
         process_image_to_file(file_data)
     elif file_type == FILE_LOG:
+        print('log file')
         # process_log_to_file(file_data)
         #TODO: process_log_to_file
         pass
