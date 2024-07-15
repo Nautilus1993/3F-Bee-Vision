@@ -1,6 +1,7 @@
 import redis
 import json
 from enum import Enum
+import re
 
 # REDIS
 REDIS = redis.Redis(host='127.0.0.1', port=6379)
@@ -17,21 +18,22 @@ class Target(Enum):
     DOUBLE = 0x02   # 双翼     
 
 """
-    部件类别枚举值
+    部件识别结果类别枚举值
 """
-class Category(Enum):
+class RESULT(Enum):
     NONE = 0xFF     # 无效
     GOOD = 0x55     # 正常
-    # CABIN = 0x01    # 主体
-    # PANEL = 0x02    # 帆板
 
-"""
-    Redis中的数值转化为遥测数据类型
-    Redis: [2.0, -2.140959675024313, 1.79414481327961, 0.8620831370353699]
-    return: [0x01, -2.140, 1.794, 86]
-"""
-# [2.0, -2.140959675024313, 1.79414481327961, 0.8620831370353699]
+# 当部件识别结果为无效的时候，返回默认值
+DEFAULT_RESULTS = [0xFF,0xFF,0xFF,0xFF]
+
 def format_angle(angle_result):
+    """
+        Redis中的数值转化为遥测数据类型
+        例如：
+        Redis: [2.0, -2.140959675024313, 1.79414481327961, 0.8620831370353699]
+        return: [0x01, -2.140, 1.794, 86]
+    """
     format_result = [
         int(angle_result[0]), # 类别(0默认 1主体 2帆板); 
         # 俯仰角; 偏航角; 置信度
@@ -41,73 +43,113 @@ def format_angle(angle_result):
     ]
     return format_result
 
-"""
-    从redis中的读取识别结果，最多返回三个目标，不足三个结果用0补全
-    # classes = ['L', 'Ball', 'D_cabin', 'D_panel']
-    # 0:L
-    # 1:Ball
-    # 2:D_cabin
-    # 3:D_panel
-"""
-def get_result_from_redis():
-    # json加载失败或第一个识别结果置信度为0时，返回empty_result
-    serialized_data = REDIS.get(TOPIC_ANGLE)
-    if serialized_data == None:
-        return Target.NONE.value, [0xFF,0xFF,0xFF,0xFF], [0xFF,0xFF,0xFF,0xFF], [0xFF,0xFF,0xFF,0xFF], 0, 0
-    try:
-        # Deserialize the JSON string to a dictionary
-        data = json.loads(serialized_data)
-        image_name = data['name']
-        image_time_s = int(image_name.split('_')[1])
-        image_time_ms = int(image_name.split('_')[2])
-        empty_result = Target.NONE.value, [0xFF,0xFF,0xFF,0xFF], [0xFF,0xFF,0xFF,0xFF], [0xFF,0xFF,0xFF,0xFF], image_time_s, image_time_ms
-    except json.JSONDecodeError as e:
-        print("识别结果json解析异常", e)
-        return Target.NONE.value, [0xFF,0xFF,0xFF,0xFF], [0xFF,0xFF,0xFF,0xFF], [0xFF,0xFF,0xFF,0xFF], 0, 0
+def image_detect_result(data):
+    """
+        根据REDIS-2中的内容，解析出图片中识别到的部件类别和数值信息
+        REDIS-2定义的类别：
+        0:L
+        1:Ball
+        2:D_cabin
+        3:D_panel
 
+        本函数应固定返回4个数值：
+        1. target 靶标类别(0-L型，1-球形，2-双翼)
+        2. cabin 主体识别结果(是否有效；俯仰角; 方位角; 置信度)
+        3. panel_1 左帆板识别结果(是否有效；俯仰角; 方位角; 置信度)
+        4. panel_2 右帆板识别结果(是否有效；俯仰角; 方位角; 置信度)
+    """
+    # 定义默认值
+    empty_result = \
+            Target.NONE.value, DEFAULT_RESULTS, DEFAULT_RESULTS, DEFAULT_RESULTS
+    # 解析第一个识别结果的内容,如果置信度为0，说明本次没有有效识别到任何物体
     target, _, _, conf = format_angle(data['angle1'])
-    
-    # 第一个识别结果置信度为0
     if conf == 0:
-        return empty_result 
+        return empty_result
     
-    # 由第一个结果的category数值，可以判断当前BB的类别
-    if target == Target.SINGLE.value:     # L形，只返回一个帆板
+    # 由第一个结果的类别数值，可以判断当前BB的类别
+    if target == Target.SINGLE.value:     # L形，只返回左帆板
         panel_1 = format_angle(data['angle1'])
-        panel_1[0] = 0x55
-        main_body = [0xFF,0xFF,0xFF,0xFF]
-        panel_2 = [0xFF,0xFF,0xFF,0xFF]
-    elif target == Target.BALL.value:     # 球形，只返回一个主体
-        main_body = format_angle(data['angle1'])
-        main_body[0] = 0x55
-        panel_1 = [0xFF,0xFF,0xFF,0xFF]
-        panel_2 = [0xFF,0xFF,0xFF,0xFF]
-    elif target == Target.DOUBLE.value:   # 双翼，返回主体和两个结果
-        main_body = format_angle(data['angle1'])
-        if main_body[3] == 0:
-            main_body = [0xFF,0xFF,0xFF,0xFF]
+        panel_1[0] = RESULT.GOOD.value
+        cabin = DEFAULT_RESULTS
+        panel_2 = DEFAULT_RESULTS
+
+    elif target == Target.BALL.value:     # 球形，只返回主体
+        cabin = format_angle(data['angle1'])
+        cabin[0] = RESULT.GOOD.value
+        panel_1 = DEFAULT_RESULTS
+        panel_2 = DEFAULT_RESULTS
+
+    elif target == Target.DOUBLE.value:   # 双翼，返回主体和两个帆板
+        cabin = format_angle(data['angle1'])
+        # TODO(wangyuhang):如果双翼主体的置信度为0，则上面应该已经被返回empty result了，当前分支进不来
+        if cabin[3] == 0:
+            cabin = DEFAULT_RESULTS
         else:
-            main_body[0] = 0x55
+            cabin[0] = RESULT.GOOD.value
+        
+        # 如果左帆板置信度为0，说明左帆板识别结果无效，返回默认值；否则按算法输入值返回
         panel_1 = format_angle(data['angle2'])
         if panel_1[3] == 0:
-            panel_1 = [0xFF,0xFF,0xFF,0xFF]
+            panel_1 = DEFAULT_RESULTS
         else:
-            panel_1[0] = 0x55
+            panel_1[0] = RESULT.GOOD.value
+
+        # 如果右帆板置信度为0，说明左帆板识别结果无效，返回默认值；否则按算法输入值返回
         panel_2 = format_angle(data['angle3'])
         if panel_2[3] == 0:
-            panel_2 = [0xFF,0xFF,0xFF,0xFF]
+            panel_2 = DEFAULT_RESULTS
         else:
-            panel_2[0] = 0x55
+            panel_2[0] = RESULT.GOOD.value
     else:
-        print("category value error")
+        print(f"当前BB类型为无效值{target}")
         return empty_result
 
+    return target, cabin, panel_1, panel_2
+    
+#TODO(wangyuhang): REDIS-2中目前缺少开窗信息w h x y，完善内部接口后再返回
+def image_meta_info(redis_message):
+    """
+        从REDIS-2中获取文件名和开窗信息，解析出相应的图片元信息
+        例如输入：image_1000_300_2050.bmp
+        应返回：
+            image_time_s(int) : 1000
+            image_time_ms(int): 300
+            exposure(int): 2050
+    """
+    image_name = redis_message['name']
+    # 用.或_分割一个字符串["image", "1000", "300", "2050", "bmp"]
+    infos = re.split(r'[._]', image_name)
+    if len(infos) != 5:
+        print("文件名解析有误！")
+        return 0, 0, 0
+    image_time_s = int(infos[1])
+    image_time_ms = int(infos[2])
+    exposure = int(infos[3])
+    return image_time_s, image_time_ms, exposure
 
-    return target, main_body, panel_1, panel_2, image_time_s, image_time_ms
+def get_result_from_redis():   
+    empty_result = \
+        Target.NONE.value, DEFAULT_RESULTS, DEFAULT_RESULTS, DEFAULT_RESULTS, 0, 0
+    
+    # 如果redis-2消息为空或加载失败，返回empty_result
+    serialized_data = REDIS.get(TOPIC_ANGLE)
+    if serialized_data == None:
+        return empty_result
+    try:
+        # 反序列化redis-2消息
+        data = json.loads(serialized_data)
+    except json.JSONDecodeError as e:
+        print("REDIS-2: 识别结果json解析异常", e)
+        return empty_result
+    
+    # 如果json加载成功，解析文件的元信息
+    target, cabin, panel_1, panel_2 = image_detect_result(data)
+    image_time_s, image_time_ms, exposure = image_meta_info(data)
+    print('-------------WYH-----------------------')
+    return target, cabin, panel_1, panel_2, image_time_s, image_time_ms
 
 def main():
-    result = get_result_from_redis()
-    print(result)
+    pass
 
 if __name__=="__main__":
     main()
