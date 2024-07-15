@@ -51,16 +51,19 @@ def format_angle(angle_result):
 """
 def get_result_from_redis():
     # json加载失败或第一个识别结果置信度为0时，返回empty_result
-    empty_result = Target.NONE.value, [0xFF,0xFF,0xFF,0xFF], [0xFF,0xFF,0xFF,0xFF], [0xFF,0xFF,0xFF,0xFF]
     serialized_data = REDIS.get(TOPIC_ANGLE)
     if serialized_data == None:
-        return empty_result
+        return Target.NONE.value, [0xFF,0xFF,0xFF,0xFF], [0xFF,0xFF,0xFF,0xFF], [0xFF,0xFF,0xFF,0xFF], 0, 0
     try:
         # Deserialize the JSON string to a dictionary
         data = json.loads(serialized_data)
+        image_name = data['name']
+        image_time_s = int(image_name.split('_')[1])
+        image_time_ms = int(image_name.split('_')[2])
+        empty_result = Target.NONE.value, [0xFF,0xFF,0xFF,0xFF], [0xFF,0xFF,0xFF,0xFF], [0xFF,0xFF,0xFF,0xFF], image_time_s, image_time_ms
     except json.JSONDecodeError as e:
         print("识别结果json解析异常", e)
-        return empty_result
+        return Target.NONE.value, [0xFF,0xFF,0xFF,0xFF], [0xFF,0xFF,0xFF,0xFF], [0xFF,0xFF,0xFF,0xFF], 0, 0
 
     target, _, _, conf = format_angle(data['angle1'])
     
@@ -99,9 +102,6 @@ def get_result_from_redis():
         print("category value error")
         return empty_result
 
-    image_name = data['name']
-    image_time_s = int(image_name.split('_')[1])
-    image_time_ms = int(image_name.split('_')[2])
 
     return target, main_body, panel_1, panel_2, image_time_s, image_time_ms
 

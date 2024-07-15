@@ -14,7 +14,7 @@ from utils.share import LOGGER, IP_ADDRESS
 from file_down_utils import unpack_udp_packet, process_image_to_file, process_image_to_redis, process_file_to_bin
 from file_down_utils import CHUNK_SIZE, HEADER_SIZE, RECV_PORT
 from file_down_utils import format_file_udp_packet
-
+from file_down_utils import FILE_IMAGE, FILE_LOG
 
 #test
 IP_ADDRESS = '127.0.0.1'
@@ -38,15 +38,13 @@ def receive_file(buffer_size):
         chunk_sum, \
         chunk_seq, \
         file_chunk = unpack_udp_packet(udp_packet)
-
         # Case1: 首帧
         if chunk_seq == 0:
             format_file_udp_packet(udp_packet)
             # 若缓存非空，说明上一个文件未收全
             if(len(received_packets) != 0):
-                LOGGER.error("收到第一帧数据，缓存非空，上一张图片未收全!")
+                LOGGER.error("收到第一帧数据，缓存非空，上一个文件未收全!")
                 # 仍然拼接文件
-                file_type = received_packets[0].file_type
                 stitching_packets(file_type, received_packets)
 
                 LOGGER.info(f"共接收{len(received_packets)}个分片")
@@ -83,7 +81,7 @@ def receive_file(buffer_size):
 
 
 def stitching_packets(file_type, received_packets):
-    sorted_packets = [received_packets[i] for i in range(len(received_packets))]
+    sorted_packets = [received_packets[i] for i in range(len(received_packets)) if i in received_packets]
     file_data = b''.join(sorted_packets)
     if file_type == FILE_IMAGE:
         process_image_to_file(file_data)

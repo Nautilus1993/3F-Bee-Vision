@@ -64,7 +64,6 @@ def unpack_udp_packet(udp_packet):
     chunk_seq, \
     file_chunk \
     = struct.unpack(FILE_DOWN_FORMAT, udp_packet)
-
     return file_type, effect_len, chunk_sum, chunk_seq, file_chunk
 
 # 解析cameralink首帧数据
