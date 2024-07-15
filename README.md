@@ -95,3 +95,8 @@ python detect.py --weights runs/train/exp66/weights/best.pt --source ../datasets
 # 各类别中心点精度评定，注意修改路径
 python precision_center.py
 ```
+
+### set 100MB net
+```bash
+sudo ethtool -s eth0 autoneg off speed 100 duplex full
+```
