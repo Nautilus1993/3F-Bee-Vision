@@ -151,13 +151,9 @@ def inference(img_grey):
                     result_bbox[1] = sorted_D_panel[1]
                     result_bbox[2] = sorted_D_panel[0]
             elif len(sorted_D_panel) == 1:
-                # compare panel with cabin center
-                if sorted_D_panel[0][0] <= result_bbox[0][0]:
-                    result_bbox[1] = sorted_D_panel[0]
-                    result_bbox[2] = [0, 0, 0, 0, 0, 0]
-                else:
-                    result_bbox[1] = [0, 0, 0, 0, 0, 0]
-                    result_bbox[2] = sorted_D_panel[0]
+                # put left panel position
+                result_bbox[1] = sorted_D_panel[0]
+                result_bbox[2] = [0, 0, 0, 0, 0, 0]
             elif len(sorted_D_panel) == 0:
                 result_bbox[1] = [0, 0, 0, 0, 0, 0]
                 result_bbox[2] = [0, 0, 0, 0, 0, 0]
@@ -295,6 +291,7 @@ def main():
                     
                     # 得到检测边界框数组
                     sat_bboxes = inference(win_img)    # [[x,y,w,h,p,c], [x,y,w,h,p,c], [x,y,w,h,p,c]]
+                    sat_bboxes_draw = sat_bboxes    # for visualization
 
                     for i in range(len(sat_bboxes)):
                         sat_bboxes[i][0] += up_left_corner[1]
@@ -304,7 +301,7 @@ def main():
                     # visualization
                     if visualization:
                         print('saving...')
-                        boxed_img = draw_boxes(img, sat_bboxes, (512, 512))
+                        boxed_img = draw_boxes(img, sat_bboxes_draw, (512, 512))
                         # cv2.imshow('image with boxes', boxed_img)
                         # cv2.waitKey(0)
                         cv2.imwrite('output.jpg', boxed_img)
