@@ -16,6 +16,7 @@ services:
     runtime: nvidia
     network_mode: "host"
     container_name: M0_image_receiver
+    restart: always
     depends_on:
       redis:
         condition: service_healthy
@@ -59,6 +60,7 @@ services:
     runtime: nvidia
     network_mode: "host"
     container_name: M1_quality
+    restart: always
     command: /usr/src/deploy/run.sh
     volumes:
       - $DEV_WORKSPACE/M1_quality/:/usr/src/app/
@@ -69,6 +71,7 @@ services:
     runtime: nvidia
     network_mode: "host"
     container_name: M2_detect
+    restart: always
     command: /usr/src/deploy/run.sh
     volumes:
       - $DEV_WORKSPACE/M2_detect/:/usr/src/app/
@@ -79,6 +82,7 @@ services:
     runtime: nvidia
     network_mode: "host"
     container_name: M3_analyze
+    restart: always
     command: /usr/src/deploy/run.sh
     volumes:
       - $DEV_WORKSPACE/M3_analyze/:/usr/src/app/

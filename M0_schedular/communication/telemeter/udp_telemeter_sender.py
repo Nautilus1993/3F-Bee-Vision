@@ -43,10 +43,8 @@ def packup_telemetering_data(counter):
     sys_status = get_device_status() 
     
     
-    
     # 4. yolo识别结果与时间戳
     target, a1, a2, a3, image_time_s, image_time_ms = get_result_from_redis()
-    
     # 组装遥测帧
     telemeter_data = pack_telemeter_packet(
         counter,

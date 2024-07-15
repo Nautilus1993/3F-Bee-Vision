@@ -23,7 +23,7 @@
             "name": "image_data_num", 
             "id": 4,
             "type": "uint32",
-            "description": "图像数据包序号"
+            "description": "文件数据包序号"
         },
         {
             "name": "file_data", 
