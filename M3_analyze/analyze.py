@@ -82,10 +82,13 @@ def producer_img():
             message_data = item['data']
             message_dict = eval(message_data)
             img_name = message_dict['name']
+            # [win_x, win_y] = message_dict['window']
+            win_width, win_height = message_dict['win_size'] 
             encoded_img = message_dict['data']
             img_data = base64.b64decode(encoded_img)
             nparr = np.frombuffer(img_data, np.uint8)
-            img = cv2.imdecode(nparr, 0) 
+            # img = cv2.imdecode(nparr, 0) # simu send
+            img = np.resize(nparr,(win_height, win_width))
             
             image_mutex.acquire()
             image_dict[img_name] = img
@@ -211,6 +214,7 @@ def top_n_elements(n):
 
 
 def pop_n_elements(n):
+    pop_n_elements = []
     rank_mutex.acquire()
     for _ in range(n):
         if not rank_q.empty():
