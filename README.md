@@ -89,6 +89,9 @@ docker compose down
 
 4. 其他
 ```bash
+# train (env yolov5)
+python train.py --batch 64 --epochs 100 --data bee_yolo.yaml --weights yolov5s.pt
+
 # 目标检测输出检测框txt
 python detect.py --weights runs/train/exp66/weights/best.pt --source ../datasets/bee_yolo/images/test2017/ --device 0 --save-txt
 
