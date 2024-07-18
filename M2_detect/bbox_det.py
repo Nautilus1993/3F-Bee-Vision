@@ -12,6 +12,7 @@ import logging
 from logging import handlers
 import base64
 import json
+import copy
 
 
 def trans_bbox_format(single_bbox, result_w, result_h, img_w, img_h):
@@ -235,7 +236,7 @@ logger.setLevel(logging.DEBUG)
 log_file = "det.log"
 # 设置日志文件大小在3M时截断
 # 最多保留1个日志备份
-fh = handlers.RotatingFileHandler(filename=log_file, maxBytes=3000000, backupCount=1)
+fh = handlers.RotatingFileHandler(filename=log_file, maxBytes=30000000, backupCount=1)
 formatter = logging.Formatter('%(asctime)s %(message)s')
 # 输出到文件
 fh.setFormatter(formatter)
@@ -269,7 +270,7 @@ def main():
                     """message info:
                     message = {
                         'name': image_name,
-                        'win_size': (2048, 2048),
+                        'win_size': (win_width, win_height),
                         'window': [win_x, win_y],
                         'data': encoded_img
                     }
@@ -278,39 +279,40 @@ def main():
                     win_width, win_height = message_dict['win_size']
                     [win_x, win_y] = message_dict['window']   # 开窗坐标系以左上角为原点，往右为X，往下为Y
                     encoded_img = message_dict['data']
+
+                    # 图像解析
                     img_data = base64.b64decode(encoded_img)
                     nparr = np.frombuffer(img_data, np.uint8)
-                    print('win_width:',win_width)
                     img = np.resize(nparr,(win_height, win_width))  # received is small img   #TODO confirm x y order
                     # img = cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)
                     # img = cv2.imdecode(nparr, 0) 
-
-                    # 得到小图的左上角在大图中的
                     win_img = img
                     up_left_corner = [win_y, win_x]   # 开窗的左上角在原图中的坐标, 行 列 坐标
                     
                     # 得到检测边界框数组
                     sat_bboxes = inference(win_img)    # [[x,y,w,h,p,c], [x,y,w,h,p,c], [x,y,w,h,p,c]]
-                    sat_bboxes_draw = sat_bboxes    # for visualization
 
+                    # visualization
+                    # 写在计算方位角和俯仰角下面的话需要用一个新的变量，并且深拷贝sat_bboxes，tql zzy
+                    if visualization:
+                        print('saving...')
+                        boxed_img = draw_boxes(img, sat_bboxes, (1024, 1024))
+                        # cv2.imshow('image with boxes', boxed_img)
+                        # cv2.waitKey(0)
+                        cv2.imwrite('output.jpg', boxed_img)
+                        # cv2.destroyAllWindows()
+
+                    # 计算方位角和俯仰角
                     for i in range(len(sat_bboxes)):
                         sat_bboxes[i][0] += up_left_corner[1]
                         sat_bboxes[i][1] += up_left_corner[0]
                     sat_angle_boxes = pos2angle(sat_bboxes, camera_center)
 
-                    # visualization
-                    if visualization:
-                        print('saving...')
-                        boxed_img = draw_boxes(img, sat_bboxes_draw, (512, 512))
-                        # cv2.imshow('image with boxes', boxed_img)
-                        # cv2.waitKey(0)
-                        cv2.imwrite('output.jpg', boxed_img)
-                        # cv2.destroyAllWindows()
-                    
+                    # 发送结果
                     pub_result(sat_bboxes, sat_angle_boxes, img_name)    # pub by redis key sat_angle_det, category, angle_pitch, angle_azimuth, p, name
                     
                     # 日志记录检测框和耗时
-                    
+                    logger.info('img_name: {}'.format(img_name))
                     logger.info('angle_bbox: {}'.format(sat_angle_boxes))
                     logger.info("sat_bbox: {}".format(sat_bboxes))
                     logger.info("time_consuming: {:.4f} s".format(time.time()-start_time))

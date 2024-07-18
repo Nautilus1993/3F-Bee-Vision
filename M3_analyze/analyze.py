@@ -60,6 +60,10 @@ def eval_result(bbox1, bbox2, bbox3, angle1, angle2, angle3):
         mean_conf = (bbox1[4] + bbox2[4] + bbox3[4]) / 3
     else:
         mean_conf = bbox1[4]
+    
+    if mean_conf == 0:
+        mean_conf = 0.0001
+        
     return 1.0/ mean_conf
 
 
