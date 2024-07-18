@@ -82,7 +82,6 @@ services:
     runtime: nvidia
     network_mode: "host"
     container_name: M3_analyze
-    restart: always
     command: /usr/src/deploy/run.sh
     volumes:
       - $DEV_WORKSPACE/M3_analyze/:/usr/src/app/
