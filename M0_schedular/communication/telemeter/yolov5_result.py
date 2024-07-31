@@ -63,7 +63,9 @@ def image_detect_result(data):
             Target.NONE.value, DEFAULT_RESULTS, DEFAULT_RESULTS, DEFAULT_RESULTS
     # 解析第一个识别结果的内容,如果置信度为0，说明本次没有有效识别到任何物体
     target, _, _, conf = format_angle(data['angle1'])
-    if conf == 0:
+    target2, _, _, conf2 = format_angle(data['angle2'])
+    target3, _, _, conf3 = format_angle(data['angle3'])
+    if conf == 0 and conf2==0 and conf3==0: 
         return empty_result
     
     # 由第一个结果的类别数值，可以判断当前BB的类别
@@ -79,7 +81,9 @@ def image_detect_result(data):
         panel_1 = DEFAULT_RESULTS
         panel_2 = DEFAULT_RESULTS
 
-    elif target == Target.DOUBLE.value:   # 双翼，返回主体和两个帆板
+    # 增加只有一个双翼帆板的时候也返回目标类型的逻辑，有点丑陋，宇航老师再重构一下
+    elif target == Target.DOUBLE.value or conf2!=0 or conf3!=0:   # 双翼，返回主体和两个帆板
+        target = Target.DOUBLE.value
         cabin = format_angle(data['angle1'])
         # TODO(wangyuhang):如果双翼主体的置信度为0，则上面应该已经被返回empty result了，当前分支进不来
         if cabin[3] == 0:

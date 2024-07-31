@@ -99,4 +99,6 @@ python precision_center.py
 ### set 100MB net
 ```bash
 sudo ethtool -s eth0 autoneg off speed 100 duplex full
+
+ethtool eth0
 ```

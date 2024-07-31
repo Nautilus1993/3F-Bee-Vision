@@ -60,6 +60,10 @@ def eval_result(bbox1, bbox2, bbox3, angle1, angle2, angle3):
         mean_conf = (bbox1[4] + bbox2[4] + bbox3[4]) / 3
     else:
         mean_conf = bbox1[4]
+    
+    if mean_conf == 0:
+        mean_conf = 0.0001
+        
     return 1.0/ mean_conf
 
 
@@ -82,10 +86,13 @@ def producer_img():
             message_data = item['data']
             message_dict = eval(message_data)
             img_name = message_dict['name']
+            # [win_x, win_y] = message_dict['window']
+            win_width, win_height = message_dict['win_size'] 
             encoded_img = message_dict['data']
             img_data = base64.b64decode(encoded_img)
             nparr = np.frombuffer(img_data, np.uint8)
-            img = cv2.imdecode(nparr, 0) 
+            # img = cv2.imdecode(nparr, 0) # simu send
+            img = np.resize(nparr,(win_height, win_width))
             
             image_mutex.acquire()
             image_dict[img_name] = img
@@ -125,31 +132,37 @@ def consumer_match():
                 img = image_dict[name]
                 image_dict.pop(name)
             except KeyError:
-                logger.info(f"{name} not found")
+                # logger.info(f"{name} not found")
                 image_mutex.release()
                 continue
 
             image_mutex.release()
 
-            logger.info(name)
-            logger.info(bbox1)
-            logger.info(bbox2)
-            logger.info(bbox3)
-            logger.info(angle1)
-            logger.info(angle2)
-            logger.info(angle3)
+            # logger.info(name)
+            # logger.info(bbox1)
+            # logger.info(bbox2)
+            # logger.info(bbox3)
+            # logger.info(angle1)
+            # logger.info(angle2)
+            # logger.info(angle3)
 
             score = eval_result(bbox1, bbox2, bbox3, angle1, angle2, angle3)
-            logger.info(f"score: {score}")
-            
+            # logger.info(f"score: {score}")
+            name = name.replace('.bmp', '.jpg')
+
             rank_mutex.acquire()
             rank_q.put((score, name))
             rank_mutex.release()
     
             # backprocess to save the image
+            
             cv2.imwrite(os.path.join('./data', name), img)
+            # logger.info(rank_q.queue)
 
         time.sleep(0.1)
+
+
+
 
 
 def process_message(message):
@@ -192,13 +205,13 @@ def query_listening(channel = 'channel.query'):
 
 def top_n_elements(n):
     temp_list = []
-    top_n_elements = []
+    top_n = []
 
     rank_mutex.acquire()
     for _ in range(n):
         if not rank_q.empty():
             item = rank_q.get()
-            top_n_elements.append(item)
+            top_n.append(item)
             temp_list.append(item)
         else:
             break
@@ -207,10 +220,11 @@ def top_n_elements(n):
         rank_q.put(item)
     rank_mutex.release()
 
-    return top_n_elements
+    return top_n
 
 
 def pop_n_elements(n):
+    pop_n_elements = []
     rank_mutex.acquire()
     for _ in range(n):
         if not rank_q.empty():
@@ -222,22 +236,50 @@ def pop_n_elements(n):
 
 
 
+def reserve_top_n_elements(n):
+    # open path 'data' and reserve top n elements
+    while True:
+        files = os.listdir('./data')
+        top_n = top_n_elements(n)
+        
+        logger.info('-------------------')
+        #log time as yy mm dd hh mm ss
+        current_time = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
+        logger.info(f'current time: {current_time}')
+
+        logger.info(f'Top {n} elements:')
+        for i in range(len(top_n)):
+            logger.info(f'top {i+1}: {str(top_n[i])}')
+
+
+        top_n = [item[1] for item in top_n]
+
+
+        for file in files:
+            if file not in top_n:
+                os.remove(os.path.join('./data', file))
+
+        time.sleep(1)
+
 
 def main():
     producer_img_thread = threading.Thread(target=producer_img)
     producer_result_thread = threading.Thread(target=producer_result)
     consumer_match_thread = threading.Thread(target=consumer_match)
     query_listening_thread = threading.Thread(target=query_listening)
+    reserve_top_n_elements_thread = threading.Thread(target=reserve_top_n_elements, args=(10,))
 
     producer_img_thread.start()
     producer_result_thread.start()
     consumer_match_thread.start()
     query_listening_thread.start()
+    reserve_top_n_elements_thread.start()
 
     producer_img_thread.join()
     producer_result_thread.join()
     consumer_match_thread.join()
     query_listening_thread.join()
+    reserve_top_n_elements_thread.join()
 
 main()
 
