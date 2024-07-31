@@ -65,8 +65,7 @@ class DockerComposeManager:
         :return: docker compose服务列表
         """
         try:
-            print("============")
-            print(self.compose_file_path)
+            # print(self.compose_file_path)
             docker_compose_config = subprocess.run(
                 ["docker", "compose", "-f", self.compose_file_path, "config", "--services"],
                 cwd=os.path.dirname(self.compose_file_path),

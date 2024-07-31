@@ -10,20 +10,6 @@ services:
     restart: always
     healthcheck:
       test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
-  
-  image_receiver:
-    image: orin_nano_messenger:20240617
-    runtime: nvidia
-    network_mode: "host"
-    container_name: M0_image_receiver
-    restart: always
-    depends_on:
-      redis:
-        condition: service_healthy
-    command: /usr/src/deploy/run_receiver.sh
-    volumes:
-      - $DEV_WORKSPACE/M0_schedular/communication/:/usr/src/app/
-      - $DEVOPS_WORKSPACE/M0/:/usr/src/deploy/
     
   telemeter:
     image: orin_nano_messenger:20240617
@@ -41,19 +27,38 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
 
   remote_control:
-    image: orin_nano_messenger:20240617
+    image: orin_nano_messenger:20240726
     runtime: nvidia
     network_mode: "host"
     container_name: M0_remote_control
     restart: always
+    privileged: true
     depends_on:
       redis:
         condition: service_healthy
-    command: /usr/src/deploy/run_remote_control.sh
+    command: /usr/src/deploy/M0/run_remote_control.sh
+    environment:
+      - DEV_WORKSPACE=$DEV_WORKSPACE
+      - DEVOPS_WORKSPACE=$DEVOPS_WORKSPACE 
     volumes:
       - $DEV_WORKSPACE/M0_schedular/communication/:/usr/src/app/
-      - $DEVOPS_WORKSPACE/M0/:/usr/src/deploy/
+      - $DEVOPS_WORKSPACE/:/usr/src/deploy/
       - /var/run/docker.sock:/var/run/docker.sock
+      - /usr/bin/docker:/usr/bin/docker
+      
+  image_receiver:
+    image: orin_nano_messenger:20240726
+    runtime: nvidia
+    network_mode: "host"
+    container_name: M0_image_receiver
+    restart: always
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: /usr/src/deploy/M0/run_receiver.sh
+    volumes:
+      - $DEV_WORKSPACE/M0_schedular/communication/:/usr/src/app/
+      - $DEVOPS_WORKSPACE:/usr/src/deploy/
     
   quality:
     image: orin_nano_yolov5:20240617
