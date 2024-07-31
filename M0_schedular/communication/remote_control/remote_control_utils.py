@@ -88,10 +88,10 @@ def execute_indirect_ins(instruction_code):
         执行间接指令，根据指令码决定启动或关闭指定服务。
     """
     if instruction_code == Instruction.APP_START.value:
-        service_list = ['image_receiver', 'yolov5']
+        service_list = ['image_receiver', 'quality', 'yolov5']
         control_services(service_list, turn_on=True)
     elif instruction_code == Instruction.APP_STOP.value:
-        service_list = ['image_receiver', 'yolov5']
+        service_list = ['image_receiver', 'quality', 'yolov5']
         control_services(service_list, turn_on=False)
     else:
         print(f"执行间接指令{instruction_code}, 逻辑待实现...")
@@ -240,10 +240,8 @@ def control_services(service_list, turn_on):
     """
         调用相应的docker compose服务(收到关闭、重启、下行文件等)
     """
-    if 'DEVOPS_WORKSPACE' in os.environ:
-        compose_file_path = os.environ['DEVOPS_WORKSPACE'] + "/docker-compose.yaml"
-    else:
-        compose_file_path = None
+    # docker container中的docker-compose.yaml文件路径
+    compose_file_path = "/usr/src/deploy/docker-compose.yaml"
     manager = DockerComposeManager(compose_file_path)
     if turn_on:
         manager.start_services(service_list)
