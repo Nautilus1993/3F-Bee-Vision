@@ -193,25 +193,32 @@ def pos2angle(bbox, camera_center):
     return sat_angle_boxes
 
 
-def pub_result(sat_bboxes, sat_angle_boxes, img_name):
+def pub_result(sat_bboxes, sat_angle_boxes, img_name, window_info):
     # Define the key and list of values
     """
+    REDIS-2示例：
     sat_bbox = {'bbox1':0,
             'angle1':0,
             'bbox2':0,
             'angle2':0,
             'bbox3':0,
             'angle3':0,
-            'name':0}
+            'name':"image_1000_300_2050.bmp",
+            'window_info': [2048,2048,0,0]}
     """
     key = 'sat_bbox_angle_det'
+    # 开窗信息合法性判断
+    if len(window_info) != 4:
+        logger.error(f"开窗信息长度有误：{window_info}")
+        window_info = [-1, -1, -1, -1]
     result = {'bbox1':sat_bboxes[0],
         'angle1':sat_angle_boxes[0],
         'bbox2':sat_bboxes[1],
         'angle2':sat_angle_boxes[1],
         'bbox3':sat_bboxes[2],
         'angle3':sat_angle_boxes[2],
-        'name':img_name}
+        'name':img_name,
+        'window_info': window_info}  
     serialized_result = json.dumps(result)
     
     # Set the key with the list value
@@ -308,13 +315,17 @@ def main():
                         sat_bboxes[i][1] += up_left_corner[0]
                     sat_angle_boxes = pos2angle(sat_bboxes, camera_center)
 
+                    # 开窗信息
+                    window_info = [win_width, win_height, win_x, win_y]
+
                     # 发送结果
-                    pub_result(sat_bboxes, sat_angle_boxes, img_name)    # pub by redis key sat_angle_det, category, angle_pitch, angle_azimuth, p, name
+                    pub_result(sat_bboxes, sat_angle_boxes, img_name, window_info)    # pub by redis key sat_angle_det, category, angle_pitch, angle_azimuth, p, name
                     
                     # 日志记录检测框和耗时
                     logger.info('img_name: {}'.format(img_name))
                     logger.info('angle_bbox: {}'.format(sat_angle_boxes))
                     logger.info("sat_bbox: {}".format(sat_bboxes))
+                    logger.info("window_info: P{}".format(window_info))
                     logger.info("time_consuming: {:.4f} s".format(time.time()-start_time))
         except Exception as e:
             print(e)   

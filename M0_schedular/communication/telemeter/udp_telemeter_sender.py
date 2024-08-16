@@ -39,32 +39,36 @@ def packup_telemetering_data(counter):
         ins_code = 0x00
     
     # 3. 获取设备状态[cpu, disk, memory]
-    
     sys_status = get_device_status() 
     
     
     # 4. yolo识别结果与时间戳
-    target, a1, a2, a3, image_time_s, image_time_ms = get_result_from_redis()
+    target, cabin, panel_1, panel_2, image_time_s, image_time_ms, \
+    exposure, win_w, win_h, win_x, win_y \
+        = get_result_from_redis()
     # 组装遥测帧
     telemeter_data = pack_telemeter_packet(
         counter,
         ins_counter,
         ins_code,
         time_s,             
-        time_ms,   
+        time_ms, 
         target,         
-        a1,
-        a2, 
-        a3,
+        cabin, 
+        panel_1, 
+        panel_2,
         sys_status,
         image_time_s,
-        image_time_ms
+        image_time_ms,
+        exposure, 
+        win_w, 
+        win_h, 
+        win_x, 
+        win_y  
     )
+    # 打印遥测帧
     format_telemeter(telemeter_data)
-
-    udp_packet = pack_udp_packet(telemeter_data)
-    
-    
+    udp_packet = pack_udp_packet(telemeter_data)    
     return udp_packet
 
 

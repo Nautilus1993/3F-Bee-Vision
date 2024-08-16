@@ -114,26 +114,43 @@ def image_detect_result(data):
 def image_meta_info(redis_message):
     """
         从REDIS-2中获取文件名和开窗信息，解析出相应的图片元信息
-        例如输入：image_1000_300_2050.bmp
+        例如输入：image_1000_300_2050.bmp, 开窗[2048,2000,0,10]
         应返回：
             image_time_s(int) : 1000
             image_time_ms(int): 300
             exposure(int): 2050
+            win_w(int): 2048
+            win_h(int): 2000
+            win_x(int): 0
+            win_y(int): 10
     """
+    default_meta_info = 0, 0, 0, 0, 0, 0, 0
     image_name = redis_message['name']
     # 用.或_分割一个字符串["image", "1000", "300", "2050", "bmp"]
-    infos = re.split(r'[._]', image_name)
-    if len(infos) != 5:
+    image_infos = re.split(r'[._]', image_name)
+    if len(image_infos) != 5:
         print("文件名解析有误！")
-        return 0, 0, 0
-    image_time_s = int(infos[1])
-    image_time_ms = int(infos[2])
-    exposure = int(infos[3])
-    return image_time_s, image_time_ms, exposure
+        return default_meta_info
+    image_time_s = int(image_infos[1])
+    image_time_ms = int(image_infos[2])
+    exposure = int(image_infos[3])
+
+    # 开窗信息
+    window_infos = redis_message['window_info']
+    if len(window_infos) != 4:
+        print("开窗信息有误！")
+        return default_meta_info
+    win_w = int(window_infos[0])
+    win_h = int(window_infos[1])
+    win_x = int(window_infos[2])
+    win_y = int(window_infos[3])
+
+    return image_time_s, image_time_ms, exposure, win_w, win_h, win_x, win_y
 
 def get_result_from_redis():   
     empty_result = \
-        Target.NONE.value, DEFAULT_RESULTS, DEFAULT_RESULTS, DEFAULT_RESULTS, 0, 0
+        Target.NONE.value, DEFAULT_RESULTS, DEFAULT_RESULTS, DEFAULT_RESULTS, \
+            0, 0, 0, 0, 0, 0, 0
     
     # 如果redis-2消息为空或加载失败，返回empty_result
     serialized_data = REDIS.get(TOPIC_ANGLE)
@@ -148,9 +165,9 @@ def get_result_from_redis():
     
     # 如果json加载成功，解析文件的元信息
     target, cabin, panel_1, panel_2 = image_detect_result(data)
-    image_time_s, image_time_ms, exposure = image_meta_info(data)
-    print('-------------WYH-----------------------')
-    return target, cabin, panel_1, panel_2, image_time_s, image_time_ms
+    image_time_s, image_time_ms, exposure, win_w, win_h, win_x, win_y = image_meta_info(data)
+    return target, cabin, panel_1, panel_2, image_time_s, image_time_ms, \
+            exposure, win_w, win_h, win_x, win_y
 
 def main():
     pass
