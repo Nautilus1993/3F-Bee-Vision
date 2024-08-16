@@ -33,7 +33,12 @@ def get_device_status():
 
 def get_yolov5_result():
     # TODO(wangyuhang):增加判断数据合法性的逻辑
-    target, angle_1, angle_2, angle_3, image_time_s, image_time_ms = get_result_from_redis()
+    target, \
+    angle_1, \
+    angle_2, \
+    angle_3, \
+    image_time_s, \
+    image_time_ms = get_result_from_redis()
     return target, angle_1, angle_2, angle_3, image_time_s, image_time_ms
     
 
@@ -70,7 +75,10 @@ fake_string_40_50 = generate_incrementing_bytes(20)
 """
     UDP 解析和组包 
 """
-def pack_telemeter_packet(c1, c2, ins_code, time_s, time_ms, target, t1, t2, t3, sys_status, image_time_s, image_time_ms):
+def pack_telemeter_packet(c1, c2, ins_code, \
+        time_s, time_ms, \
+        target, cabin, panel_1, panel_2, sys_status, \
+        image_time_s, image_time_ms, exposure, win_w, win_h, win_x, win_y):
     udp_packet = struct.pack(TELEMETER_UDP_FORMAT, 
         time_s,             # 1. 组包时间秒
         time_ms,            # 2. 组包时间毫秒
@@ -93,24 +101,24 @@ def pack_telemeter_packet(c1, c2, ins_code, time_s, time_ms, target, t1, t2, t3,
         0,                  # 19. 当前识别图像质量指标（亮度）
         image_time_s,       # 20. 当前识别图像时间戳秒
         image_time_ms,      # 21. 当前识别图像时间戳毫秒
-        0,                  # 22. 当前识别图像曝光时长
-        0,                  # 23. 当前识别图像开窗宽度w
-        0,                  # 24. 当前识别图像开窗高度h
-        0,                  # 25. 当前识别图像开窗位置x
-        0,                  # 26. 当前识别图像开窗位置y
+        exposure,           # 22. 当前识别图像曝光时长
+        win_w,              # 23. 当前识别图像开窗宽度w
+        win_h,              # 24. 当前识别图像开窗高度h
+        win_x,              # 25. 当前识别图像开窗位置x
+        win_y,              # 26. 当前识别图像开窗位置y
         target,             # 27. BB类别
-        t1[0],              # 28. 主体 识别结果
-        t1[1],              # 29. 主体 方位角
-        t1[2],              # 30. 主体 俯仰角
-        t1[3],              # 31. 主体 置信度
-        t2[0],              # 32. 主体 识别结果
-        t2[1],              # 33. 主体 方位角
-        t2[2],              # 34. 主体 俯仰角
-        t2[3],              # 35. 主体 置信度
-        t3[0],              # 36. 主体 识别结果
-        t3[1],              # 37. 主体 方位角
-        t3[2],              # 38. 主体 俯仰角
-        t3[3],              # 39. 主体 置信度
+        cabin[0],           # 28. 主体 识别结果
+        cabin[1],           # 29. 主体 方位角
+        cabin[2],           # 30. 主体 俯仰角
+        cabin[3],           # 31. 主体 置信度
+        panel_1[0],         # 32. 左帆板 识别结果
+        panel_1[1],         # 33. 左帆板 方位角
+        panel_1[2],         # 34. 左帆板 俯仰角
+        panel_1[3],         # 35. 左帆板 置信度
+        panel_2[0],         # 36. 右帆板 识别结果
+        panel_2[1],         # 37. 右帆板 方位角
+        panel_2[2],         # 38. 右帆板 俯仰角
+        panel_2[3],         # 39. 右帆板 置信度
         fake_string_40_50   # 40-50:共20bytes保留字段
     )
     return udp_packet
@@ -133,7 +141,13 @@ def format_telemeter(udp_packet):
     config_file_path = parent_dir + "/message_config/" + config_file
     format_udp_packet(udp_packet, config_file_path)
 
+# TODO(wangyuhang):统一到pack_telemeter函数中
 def pack_udp_packet(telemeter_data):
+    """
+        根据遥测数据计算校验和并附在遥测数据后面
+        输入：遥测数据(96 bytes)
+        输出：数据类型和长度 + 遥测数据 + 校验和 (101bytes)
+    """
     UDP_FORMAT = "!HB96s"
     data_length = 96
     data_type = 0x12
@@ -162,9 +176,13 @@ def single_byte_checksum(data):
     return checksum
 
 def sync_time():
+    """
+        同步系统时间，让遥测数据整秒发送
+    """
     current_time = time.time()
     next_second = current_time + 1 - (current_time % 1)
     time.sleep(next_second - current_time)
+
 # def main():
 #     result = get_result_from_redis()
 #     print(result)
