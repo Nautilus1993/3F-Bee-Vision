@@ -2,11 +2,13 @@ import redis
 import json
 from enum import Enum
 import re
+import time
 
 # REDIS
 REDIS = redis.Redis(host='127.0.0.1', port=6379)
 TOPIC_RESULT = 'sat_bbox_det'
 TOPIC_ANGLE = 'sat_bbox_angle_det'
+REDIS_8_TOPIC = "topic.image_status"
 
 """
     靶标类别枚举值
@@ -110,7 +112,6 @@ def image_detect_result(data):
 
     return target, cabin, panel_1, panel_2
     
-#TODO(wangyuhang): REDIS-2中目前缺少开窗信息w h x y，完善内部接口后再返回
 def image_meta_info(redis_message):
     """
         从REDIS-2中获取文件名和开窗信息，解析出相应的图片元信息
@@ -167,7 +168,36 @@ def get_result_from_redis():
     target, cabin, panel_1, panel_2 = image_detect_result(data)
     image_time_s, image_time_ms, exposure, win_w, win_h, win_x, win_y = image_meta_info(data)
     return target, cabin, panel_1, panel_2, image_time_s, image_time_ms, \
-            exposure, win_w, win_h, win_x, win_y
+            exposure, win_w, win_h, win_x, win_y      
+
+def get_image_statistic(ttl_seconds=5):
+    """
+        从redis中获取一组滚动曝光的图片接收延迟、总数以及筛选出图像的分数。
+        设置消息时限为5s,如果超过5s依然消息依然没有更新，则说明收图程序有问题，返回默认值
+    """
+    # 读取后立刻清空消息队列
+    message = REDIS.lrange(REDIS_8_TOPIC, 0, 0)
+    
+    # 如果还未接收到图片，返回图片未收到状态值，并返回统计信息默认值
+    default_statistic = 0xFF, 0, [0, 0, 0, 0], 0
+    if not message:
+        print("Error: Redis中没有图片接收统计信息！")
+        return default_statistic
+    try:
+        message = json.loads(message[0])
+        image_status = message['image_status']
+        image_sum = message['image_sum']
+        image_delays = message['image_delays']
+        image_score = message['image_score']
+        timestamp = message['timestamp']
+        if time.time() - timestamp > ttl_seconds:
+            print("Redis中图片接收统计信息已过期！")
+            REDIS.ltrim(REDIS_8_TOPIC, 1, 0)
+            return default_statistic
+        return image_status, image_sum, image_delays, image_score
+    except KeyError:
+        print("Redis键值有误！")
+    return default_statistic
 
 def main():
     pass

@@ -14,7 +14,7 @@ sys.path.append(script_dir)
 
 # 加载docker client用于控制docker compose 服务
 from utils.docker_status import DockerComposeManager
-from utils.share import get_timestamps
+from utils.share import LOGGER, get_timestamps
 
 # 加载遥测数据格式配置文件,生成UDP包格式
 from message_config.udp_format import INDIRECT_INS_UDP_FORMAT, \
@@ -133,9 +133,33 @@ def write_time_to_redis(time_s, time_ms):
         'delta_ms': sys_time_ms - time_ms
     }
     # 将消息推送到队列
-    REDIS.lpush(TOPIC_TIME, str(timestamp))
+    json_str = json.dumps(timestamp)
+    REDIS.lpush(TOPIC_TIME, json_str)
     # 修剪队列长度
     REDIS.ltrim(TOPIC_TIME, 0, MAX_LENGTH - 1)
+
+def read_time_from_redis():
+    """
+        从redis中读取星上时信息，用于计算图片延迟。
+    """
+    default_time = 0, 0, 0, 0, 0, 0
+    tf_time = REDIS.lrange(TOPIC_TIME,0, 0)
+    if not tf_time:
+        LOGGER.error("Redis中没有时间转换信息！")
+        return default_time
+    try:
+        tf_time = json.loads(tf_time[0])
+    except Exception as e:
+        LOGGER.exception(f"星上时json反序列化异常 {e}")
+        return default_time
+    # print(tf_time)
+    time_s = tf_time['time_s']
+    time_ms = tf_time['time_ms']
+    sys_time_s = tf_time['sys_time_s']
+    sys_time_ms = tf_time['sys_time_ms']
+    delta_s = tf_time['delta_s']
+    delta_ms = tf_time['delta_ms']
+    return time_s, time_ms, sys_time_s, sys_time_ms, delta_s, delta_ms
 
 def sync_to_satellite_time():
     """
