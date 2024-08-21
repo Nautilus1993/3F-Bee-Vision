@@ -14,7 +14,7 @@ sys.path.append(parent_dir)
 sys.path.append(script_dir)
 
 from utils.share import format_udp_packet
-from yolov5_result import get_result_from_redis
+from algorithm_result import get_result_from_redis, get_image_statistic
 from system_usage import get_system_status
 
 # 遥测帧UDP格式
@@ -29,7 +29,11 @@ def get_device_status():
     # TODO(wangyuhang):增加判断数据合法性的逻辑
     device_status = get_system_status()
     return device_status
-    
+
+def get_image_status():
+    image_status, image_sum, image_delays, image_score = \
+          get_image_statistic()
+    return image_status, image_sum, image_delays, int(image_score)
 
 def get_yolov5_result():
     # TODO(wangyuhang):增加判断数据合法性的逻辑
@@ -41,7 +45,6 @@ def get_yolov5_result():
     image_time_ms = get_result_from_redis()
     return target, angle_1, angle_2, angle_3, image_time_s, image_time_ms
     
-
 def fake_result_from_redis():
     # 目标1: 类别(0默认 1主体 2帆板); 俯仰角; 偏航角; 置信度
     target_1 = [0x01, 0.0, 30.0, 90]
@@ -69,7 +72,6 @@ def generate_incrementing_bytes(length):
     """
     return bytes([i % 256 for i in range(length)])
 
-# fake_string_11_26 = generate_incrementing_bytes(30)
 fake_string_40_50 = generate_incrementing_bytes(20)
 
 """
@@ -78,6 +80,7 @@ fake_string_40_50 = generate_incrementing_bytes(20)
 def pack_telemeter_packet(c1, c2, ins_code, \
         time_s, time_ms, \
         target, cabin, panel_1, panel_2, sys_status, \
+        image_status, image_sum, image_delays, image_score, \
         image_time_s, image_time_ms, exposure, win_w, win_h, win_x, win_y):
     udp_packet = struct.pack(TELEMETER_UDP_FORMAT, 
         time_s,             # 1. 组包时间秒
@@ -92,13 +95,13 @@ def pack_telemeter_packet(c1, c2, ins_code, \
         0x00,               # 10. AI计算机功率(TODO)
         0x00,               # 11. 软件基础模块运行状态
         0x00,               # 12. 算法模块运行状态
-        0x00,               # 13. 图像接收状态码
-        0,                  # 14. 图像1接收时延
-        0,                  # 15. 图像2接收时延
-        0,                  # 16. 图像3接收时延
-        0,                  # 17. 图像4接收时延
-        0,                  # 18. 筛选图像总数
-        0,                  # 19. 当前识别图像质量指标（亮度）
+        image_status,       # 13. 图像接收状态码
+        image_delays[0],    # 14. 图像1接收时延
+        image_delays[1],    # 15. 图像2接收时延
+        image_delays[2],    # 16. 图像3接收时延
+        image_delays[3],    # 17. 图像4接收时延
+        image_sum,          # 18. 筛选图像总数
+        image_score,        # 19. 当前识别图像质量指标（亮度）
         image_time_s,       # 20. 当前识别图像时间戳秒
         image_time_ms,      # 21. 当前识别图像时间戳毫秒
         exposure,           # 22. 当前识别图像曝光时长

@@ -16,6 +16,7 @@ from utils.share import LOGGER, IP_ADDRESS, get_timestamps
 from remote_control.remote_control_utils import read_instruction_from_redis
 from telemeter_utils import SERVER_PORT, SEND_IP
 from telemeter_utils import get_result_from_redis, get_device_status, \
+    get_image_status, \
     pack_telemeter_packet, format_telemeter, pack_udp_packet, sync_time
 
 # TODO(wangyuhang):后面把串口的逻辑拆出这个模块
@@ -46,6 +47,11 @@ def packup_telemetering_data(counter):
     target, cabin, panel_1, panel_2, image_time_s, image_time_ms, \
     exposure, win_w, win_h, win_x, win_y \
         = get_result_from_redis()
+    
+    # 5. 图片接收状态
+    image_status, image_sum, image_delays, image_score \
+        = get_image_status()
+    
     # 组装遥测帧
     telemeter_data = pack_telemeter_packet(
         counter,
@@ -58,6 +64,10 @@ def packup_telemetering_data(counter):
         panel_1, 
         panel_2,
         sys_status,
+        image_status, 
+        image_sum, 
+        image_delays, 
+        image_score,
         image_time_s,
         image_time_ms,
         exposure, 

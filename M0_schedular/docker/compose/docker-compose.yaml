@@ -2,6 +2,7 @@ version: '3'
 name: 3f-vision
 
 services:
+  # M0-redis
   redis:
     image: redis:latest
     ports:
@@ -10,7 +11,7 @@ services:
     restart: always
     healthcheck:
       test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
-    
+  # M0-遥测数据发送
   telemeter:
     image: orin_nano_messenger:20240617
     runtime: nvidia
@@ -25,7 +26,7 @@ services:
       - $DEV_WORKSPACE/M0_schedular/communication/:/usr/src/app/
       - $DEVOPS_WORKSPACE/M0/:/usr/src/deploy/
       - /var/run/docker.sock:/var/run/docker.sock
-
+  # M0-指令与星上时接收
   remote_control:
     image: orin_nano_messenger:20240726
     runtime: nvidia
@@ -45,7 +46,7 @@ services:
       - $DEVOPS_WORKSPACE/:/usr/src/deploy/
       - /var/run/docker.sock:/var/run/docker.sock
       - /usr/bin/docker:/usr/bin/docker
-      
+  # M0-图片接收与解析    
   image_receiver:
     image: orin_nano_messenger:20240726
     runtime: nvidia
@@ -59,7 +60,7 @@ services:
     volumes:
       - $DEV_WORKSPACE/M0_schedular/communication/:/usr/src/app/
       - $DEVOPS_WORKSPACE:/usr/src/deploy/
-    
+  # M1-图片质量评估与筛选
   quality:
     image: orin_nano_yolov5:20240617
     runtime: nvidia
@@ -70,7 +71,7 @@ services:
     volumes:
       - $DEV_WORKSPACE/M1_quality/:/usr/src/app/
       - $DEVOPS_WORKSPACE/M1/:/usr/src/deploy/
-
+  # M2-部件识别
   yolov5:
     image: orin_nano_yolov5:20240617
     runtime: nvidia
@@ -81,7 +82,7 @@ services:
     volumes:
       - $DEV_WORKSPACE/M2_detect/:/usr/src/app/
       - $DEVOPS_WORKSPACE/M2/:/usr/src/deploy/
-    
+  # M3-图片择优与存储
   analyzer:
     image: orin_nano_yolov5:20240617
     runtime: nvidia
