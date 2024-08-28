@@ -39,9 +39,8 @@ def packup_telemetering_data(counter):
         ins_counter = 0
         ins_code = 0x00
     
-    # 3. 获取设备状态[cpu, disk, memory]
+    # 3. 获取设备状态[cpu, disk, memory, power]
     sys_status = get_device_status() 
-    
     
     # 4. yolo识别结果与时间戳
     target, cabin, panel_1, panel_2, image_time_s, image_time_ms, \
