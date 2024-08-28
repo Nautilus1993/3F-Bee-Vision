@@ -3,6 +3,7 @@ import redis
 import time
 import json
 import os
+import threading
 
 
 import sys
@@ -13,21 +14,24 @@ parent_dir = os.path.dirname(script_dir)
 sys.path.append(parent_dir)
 sys.path.append(script_dir)
 
-from utils.share import format_udp_packet
+from utils.share import format_udp_packet, LOGGER
 from algorithm_result import get_result_from_redis, get_image_statistic
-from system_usage import get_system_status
+from system_usage import get_device_status_from_redis
 
 # 遥测帧UDP格式
 from message_config.udp_format import TELEMETER_UDP_FORMAT
 
 # 发送端的IP地址和端口号
 SERVER_PORT = 18089
-SEND_IP = '192.168.0.103'
+SEND_IP = '192.168.0.103'    
 
-# 获取系统状态
+
 def get_device_status():
-    # TODO(wangyuhang):增加判断数据合法性的逻辑
-    device_status = get_system_status()
+    device_status = get_device_status_from_redis()
+    for statu in device_status:
+        if statu < 0 or statu > 255:
+            LOGGER.error("system status error: %s", device_status)
+            return [0, 0, 0, 0]
     return device_status
 
 def get_image_status():
@@ -92,9 +96,9 @@ def pack_telemeter_packet(c1, c2, ins_code, \
         sys_status[0],      # 7. CPU占用率
         sys_status[1],      # 8. 磁盘占用率
         sys_status[2],      # 9. 内存占用率
-        0x00,               # 10. AI计算机功率(TODO)
-        0x00,               # 11. 软件基础模块运行状态
-        0x00,               # 12. 算法模块运行状态
+        sys_status[3],      # 10. AI计算机功率
+        0x00,               # 11. 软件基础模块运行状态(TODO)
+        0x00,               # 12. 算法模块运行状态(TODO)
         image_status,       # 13. 图像接收状态码
         image_delays[0],    # 14. 图像1接收时延
         image_delays[1],    # 15. 图像2接收时延
@@ -175,7 +179,7 @@ def single_byte_checksum(data):
     int: 单字节校验和(0-65535)
     """
     checksum = sum(data) % 65536
-    print(f"数据长度 {len(data)} 校验和: {checksum}")
+    # print(f"数据长度 {len(data)} 校验和: {checksum}")
     return checksum
 
 def sync_time():

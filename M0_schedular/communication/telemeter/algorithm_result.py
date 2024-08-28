@@ -181,7 +181,7 @@ def get_image_statistic(ttl_seconds=5):
     # 如果还未接收到图片，返回图片未收到状态值，并返回统计信息默认值
     default_statistic = 0xFF, 0, [0, 0, 0, 0], 0
     if not message:
-        print("Error: Redis中没有图片接收统计信息！")
+        # print("Error: Redis中没有图片接收统计信息！")
         return default_statistic
     try:
         message = json.loads(message[0])

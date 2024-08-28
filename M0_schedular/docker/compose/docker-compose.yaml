@@ -13,11 +13,12 @@ services:
       test: [ "CMD", "redis-cli", "--raw", "incr", "ping" ]
   # M0-遥测数据发送
   telemeter:
-    image: orin_nano_messenger:20240617
+    image: orin_nano_messenger:20240827
     runtime: nvidia
     network_mode: "host"
     container_name: M0_telemeter
     restart: always
+    privileged: true
     depends_on:
       redis:
         condition: service_healthy
@@ -26,9 +27,10 @@ services:
       - $DEV_WORKSPACE/M0_schedular/communication/:/usr/src/app/
       - $DEVOPS_WORKSPACE/M0/:/usr/src/deploy/
       - /var/run/docker.sock:/var/run/docker.sock
+      - /run/jtop.sock:/run/jtop.sock
   # M0-指令与星上时接收
   remote_control:
-    image: orin_nano_messenger:20240726
+    image: orin_nano_messenger:20240827
     runtime: nvidia
     network_mode: "host"
     container_name: M0_remote_control
@@ -48,7 +50,7 @@ services:
       - /usr/bin/docker:/usr/bin/docker
   # M0-图片接收与解析    
   image_receiver:
-    image: orin_nano_messenger:20240726
+    image: orin_nano_messenger:20240827
     runtime: nvidia
     network_mode: "host"
     container_name: M0_image_receiver
