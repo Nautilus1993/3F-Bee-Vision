@@ -17,6 +17,7 @@ sys.path.append(script_dir)
 from utils.share import format_udp_packet, LOGGER
 from algorithm_result import get_result_from_redis, get_image_statistic
 from system_usage import get_device_status_from_redis
+from utils.docker_status import DockerComposeManager, get_service_status
 
 # 遥测帧UDP格式
 from message_config.udp_format import TELEMETER_UDP_FORMAT
@@ -25,6 +26,33 @@ from message_config.udp_format import TELEMETER_UDP_FORMAT
 SERVER_PORT = 18089
 SEND_IP = '192.168.0.103'    
 
+# 定义服务名称和编号
+SERVICE_NAMES = ['M0_redis', 
+                 'M0_remote_control',
+                 'M0_telemeter', 
+                 'M0_image_receiver',
+                 'M1_quality',
+                 'M2_detect',
+                 'M3_analyze']
+SERVICE_IDS = {name: idx for idx, name in enumerate(SERVICE_NAMES)}
+
+def get_docker_status():
+    """
+        返回Docker-compose.yaml文件中所有启动的服务，如果服务启动，
+        则服务对应ID位置的bit置为1. 
+        如果仅开启基础服务模块，返回 0000 0111 = 7
+        如果所有模块都开启，返回0111 1111 = 127
+    """
+    # docker container中的docker-compose.yaml文件路径
+    compose_file_path = "/usr/src/deploy/docker-compose.yaml"
+    manager = DockerComposeManager(compose_file_path)
+    docker_status = get_service_status(manager, SERVICE_NAMES, SERVICE_IDS)
+    docker_status = int.from_bytes(docker_status, byteorder='big')
+    # 目前服务数量为7，数值边界判断如下
+    if docker_status >=0 and docker_status < (1 << len(SERVICE_NAMES)):
+        return docker_status
+    LOGGER.error(f"docker status数值有误{docker_status}")
+    return 0
 
 def get_device_status():
     device_status = get_device_status_from_redis()
@@ -83,6 +111,7 @@ fake_string_40_50 = generate_incrementing_bytes(20)
 """
 def pack_telemeter_packet(c1, c2, ins_code, \
         time_s, time_ms, \
+        docker_status, \
         target, cabin, panel_1, panel_2, sys_status, \
         image_status, image_sum, image_delays, image_score, \
         image_time_s, image_time_ms, exposure, win_w, win_h, win_x, win_y):
@@ -97,7 +126,7 @@ def pack_telemeter_packet(c1, c2, ins_code, \
         sys_status[1],      # 8. 磁盘占用率
         sys_status[2],      # 9. 内存占用率
         sys_status[3],      # 10. AI计算机功率
-        0x00,               # 11. 软件基础模块运行状态(TODO)
+        docker_status,      # 11. 软件基础模块运行状态
         0x00,               # 12. 算法模块运行状态(TODO)
         image_status,       # 13. 图像接收状态码
         image_delays[0],    # 14. 图像1接收时延

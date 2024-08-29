@@ -22,10 +22,10 @@ services:
     depends_on:
       redis:
         condition: service_healthy
-    command: /usr/src/deploy/run_sender.sh
+    command: /usr/src/deploy/M0/run_sender.sh
     volumes:
       - $DEV_WORKSPACE/M0_schedular/communication/:/usr/src/app/
-      - $DEVOPS_WORKSPACE/M0/:/usr/src/deploy/
+      - $DEVOPS_WORKSPACE/:/usr/src/deploy/
       - /var/run/docker.sock:/var/run/docker.sock
       - /run/jtop.sock:/run/jtop.sock
   # M0-指令与星上时接收

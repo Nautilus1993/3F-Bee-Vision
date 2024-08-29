@@ -16,7 +16,7 @@ from utils.share import LOGGER, IP_ADDRESS, get_timestamps
 from remote_control.remote_control_utils import read_instruction_from_redis
 from telemeter_utils import SERVER_PORT, SEND_IP
 from telemeter_utils import get_result_from_redis, get_device_status, \
-    get_image_status, \
+    get_image_status, get_docker_status, \
     pack_telemeter_packet, format_telemeter, pack_udp_packet, sync_time
 
 # TODO(wangyuhang):后面把串口的逻辑拆出这个模块
@@ -51,13 +51,17 @@ def packup_telemetering_data(counter):
     image_status, image_sum, image_delays, image_score \
         = get_image_status()
     
+    # 6. 获取各docker状态
+    docker_status = get_docker_status()
+    
     # 组装遥测帧
     telemeter_data = pack_telemeter_packet(
         counter,
         ins_counter,
         ins_code,
         time_s,             
-        time_ms, 
+        time_ms,
+        docker_status,
         target,         
         cabin, 
         panel_1, 
