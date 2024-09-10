@@ -13,11 +13,13 @@ sys.path.append(parent_dir)
 sys.path.append(script_dir)
 
 from utils.share import LOGGER, IP_ADDRESS, get_timestamps
-from remote_control.remote_control_utils import read_instruction_from_redis
+
 from telemeter_utils import SERVER_PORT, SEND_IP
-from telemeter_utils import get_result_from_redis, get_device_status, \
+from telemeter_utils import get_result_from_redis, \
+    get_device_status, get_instruction_status, \
     get_image_status, get_docker_status, \
-    pack_telemeter_packet, format_telemeter, pack_udp_packet, sync_time
+    get_download_status, pack_telemeter_packet, \
+    format_telemeter, pack_udp_packet, sync_time
 
 # TODO(wangyuhang):后面把串口的逻辑拆出这个模块
 SERIAL_PORT = '/dev/ttyXRUSB1'
@@ -26,18 +28,10 @@ BRATE = 115200
 def packup_telemetering_data(counter):
     
     # 1. 组包时间
-    time_s, time_ms = get_timestamps()
+    sys_time_s, sys_time_ms = get_timestamps()
 
     # 2. 指令状态
-    json_string = read_instruction_from_redis()
-    try:
-        last_instruction = json.loads(json_string)
-        ins_counter = last_instruction['counter']
-        # 指令转为16进制数
-        ins_code = int(last_instruction['instruction_code'], 16)
-    except TypeError:
-        ins_counter = 0
-        ins_code = 0x00
+    ins_code, ins_counter = get_instruction_status()
     
     # 3. 获取设备状态[cpu, disk, memory, power]
     sys_status = get_device_status() 
@@ -53,14 +47,17 @@ def packup_telemetering_data(counter):
     
     # 6. 获取各docker状态
     docker_status = get_docker_status()
+
+    # 7. 获取文件下载状态
+    download_state, download_progress = get_download_status()
     
     # 组装遥测帧
     telemeter_data = pack_telemeter_packet(
         counter,
         ins_counter,
         ins_code,
-        time_s,             
-        time_ms,
+        sys_time_s,             
+        sys_time_ms,
         docker_status,
         target,         
         cabin, 
@@ -77,7 +74,10 @@ def packup_telemetering_data(counter):
         win_w, 
         win_h, 
         win_x, 
-        win_y  
+        win_y,
+        0,
+        download_state, 
+        download_progress
     )
     # 打印遥测帧
     format_telemeter(telemeter_data)

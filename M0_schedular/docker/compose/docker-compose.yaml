@@ -94,3 +94,16 @@ services:
     volumes:
       - $DEV_WORKSPACE/M3_analyze/:/usr/src/app/
       - $DEVOPS_WORKSPACE/M3/:/usr/src/deploy/
+  # M0-文件下载
+  file_download:
+    image: orin_nano_messenger:20240827
+    runtime: nvidia
+    network_mode: "host"
+    container_name: M0_file_download
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: /usr/src/deploy/M0/run_download.sh
+    volumes:
+      - $DEV_WORKSPACE/M0_schedular/communication/:/usr/src/app/
+      - $DEVOPS_WORKSPACE:/usr/src/deploy/

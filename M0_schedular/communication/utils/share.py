@@ -2,6 +2,7 @@ import logging
 import json
 import time
 import struct
+import redis
 
 # 日志输出到控制台
 # logging.basicConfig(filename="M0-log.txt", filemode='a')
@@ -14,8 +15,11 @@ ch.setFormatter(formatter)
 LOGGER.addHandler(ch)
 
 # TODO:本机IP，需要按实际情况修改
-# IP_ADDRESS = '127.0.0.1'
-IP_ADDRESS = '192.168.0.101'
+IP_ADDRESS = '127.0.0.1'
+# IP_ADDRESS = '192.168.0.101'
+
+# REDIS
+REDIS = redis.Redis(host='127.0.0.1', port=6379)
 
 # 根据配置文件生成UDP打包格式
 def generate_udp_format(config_file):
@@ -83,3 +87,53 @@ def format_udp_packet(packet, config_file):
             else:
                 format_string += f"{field_info}:\t{value[:20]} ...总长度 {len(value)}\n"
     print(format_string)
+
+def serialize_msg(message):
+    """
+        将发给redis的消息序列化
+        输入：消息结构体
+        输出：json数据流
+    """
+    try:
+        json_string = json.dumps(message)
+        print("Serialized JSON:", json_string)
+        return json_string
+    except TypeError as e:
+        LOGGER.error(f"json序列化失败: {e}")  
+
+def deserialize_msg(json_string):
+    """
+        将从redis中获得的消息反序列化
+        输入：json数据
+        输出：消息结构体
+    """
+    try:
+        message = json.loads(json_string)
+        return message
+    except json.JSONDecodeError as e:
+        LOGGER.error(f"json反序列化失败: {e}")
+
+def set_redis_key(key, value):
+    try:
+        REDIS.set(key, value)
+    except redis.ConnectionError:
+        print("Failed to connect to Redis.")
+    except redis.TimeoutError:
+        print("Redis request timed out.")
+    except redis.ResponseError as e:
+        print(f"Redis response error: {e}")
+    except redis.RedisError as e:
+        print(f"Redis error: {e}")
+
+def get_redis_key(key):
+    try:
+        value = REDIS.get(key)
+        return value
+    except redis.ConnectionError:
+        print("Failed to connect to Redis.")
+    except redis.TimeoutError:
+        print("Redis request timed out.")
+    except redis.ResponseError as e:
+        print(f"Redis response error: {e}")
+    except redis.RedisError as e:
+        print(f"Redis error: {e}")
