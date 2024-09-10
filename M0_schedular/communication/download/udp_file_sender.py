@@ -14,35 +14,31 @@ sys.path.append(script_dir)
 
 # Add the parent directory to the sys.path list
 from utils.share import LOGGER, IP_ADDRESS
-from file_down_utils import RECV_PORT, pack_udp_packet, crop_image
-from file_down_utils import jpeg2000_encode
-
+from file_down_utils import RECV_PORT, DownloadState, \
+    pack_udp_packet, update_download_status
+# from file_down_utils import jpeg2000_encode
 CHUNK_SIZE = 93           # 图片分片长度
+FILE_PATH = "/usr/src/app/remote_control/tmp/output.zip"
+# FILE_PATH = "/home/ywang/Documents/3F-Bee-Vision/M0_schedular/communication/remote_control/tmp/output.zip"
 
-
-
-# test
-IP_ADDRESS = '127.0.0.1'
-
-
-
-
-
-
-
-def send_file_data(file_type, file_data):
+def send_file_data(file_type, file_data, freq = 50):
+    """
+        发送文件分片并指定分片发送频率(默认每秒发送十个分片)
+        输入：
+        1. 文件类型(0x00图片文件 0xAA日志文件)
+        2. 文件字节流
+        3. 每秒发送分片数量
+    """
     # 创建UDP套接字
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     
     # 获取文件大小和分片数量
     file_size = len(file_data)
-    # print(file_size)
     chunk_sum = (file_size + CHUNK_SIZE - 1) // CHUNK_SIZE
-    # print(chunk_sum)
-
 
     # 发送文件分片
     sent_chunks = 0
+    progress = 0  # 分片发送进度，范围0-100
     for i in range(chunk_sum):
         # 获取文件分片
         start = i * CHUNK_SIZE
@@ -56,40 +52,32 @@ def send_file_data(file_type, file_data):
             file_chunk
         )
         sock.sendto(udp_packet, (IP_ADDRESS, RECV_PORT))
-        sent_chunks += 1
+        sent_chunks += 1 
+        cur_progress = int(i / chunk_sum * 100)
+        # 更新下载进度到redis
+        if progress != cur_progress:
+            progress = cur_progress
+            # LOGGER.info(f"UDP分片下传进度{progress}%, 已下传分片数{i}/{chunk_sum}")
+            update_download_status(DownloadState.RUNNING.value, progress)
+        # 发送每个分片间隔的s
+        time.sleep(1 / freq) 
     
     # 输出发送图片结束时的日志：分片数量，文件大小
     LOGGER.info(f"文件类型:{file_type}，已发送分片数:{sent_chunks}，总分片数:{chunk_sum} ，文件大小:{file_size} Byte")
-
+    update_download_status(DownloadState.NONE.value, 0)
     # 关闭套接字
     sock.close()
 
-
-
-#################################################TEST#################################################
-
-
-# 图像文件路径
-image_name = script_dir + '/test_images/xingmin.bmp' # 2048 * 2048
-test_cases = [
-    [2048, 2048, 0, 0],  
-    [1024, 1024, 300, 400], 
-    [1024, 1024, 500, 500]
-]
-
-# 给定窗口大小和图片文件，发送框定部分的图片数据
-def send_window(window, image_file):
-    w, h, x, y = window
-    image_array = crop_image(w, h, x, y, image_file)
-    # image_bytes = image_array.tobytes()
-    image_bytes = jpeg2000_encode(image_array)
-    print(len(image_bytes))
-    send_file_data(0x00, image_bytes)
+# TODO(wangyuhang):需要增加判断是下载日志还是图片的功能
+def send_image_file():
+    with open(FILE_PATH, 'rb') as file:
+        raw_data = file.read()
+        print("读取文件成功")
+    send_file_data(0x00, raw_data)
 
 def main():
-    for window in test_cases:
-        send_window(window, image_name)
-        time.sleep(3)
+    print("download……")
+    send_image_file()
 
 if __name__ == '__main__':
     main()

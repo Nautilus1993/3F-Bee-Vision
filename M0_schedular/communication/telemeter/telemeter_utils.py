@@ -14,7 +14,10 @@ parent_dir = os.path.dirname(script_dir)
 sys.path.append(parent_dir)
 sys.path.append(script_dir)
 
-from utils.share import format_udp_packet, LOGGER
+from utils.share import format_udp_packet, LOGGER, \
+    get_redis_key, deserialize_msg
+from utils.constants import KEY_DOWNLOAD_STATUS
+from remote_control.remote_control_utils import read_instruction_from_redis
 from algorithm_result import get_result_from_redis, get_image_statistic
 from system_usage import get_device_status_from_redis
 from utils.docker_status import DockerComposeManager, get_service_status
@@ -36,6 +39,21 @@ SERVICE_NAMES = ['M0_redis',
                  'M3_analyze']
 SERVICE_IDS = {name: idx for idx, name in enumerate(SERVICE_NAMES)}
 
+def get_instruction_status():
+    """
+        从redis中获取指令接收状态
+    """
+    json_string = read_instruction_from_redis()
+    try:
+        last_instruction = json.loads(json_string)
+        ins_counter = last_instruction['counter']
+        # 指令转为16进制数
+        ins_code = int(last_instruction['instruction_code'], 16)
+    except TypeError:
+        ins_counter = 0
+        ins_code = 0x00
+    return ins_code, ins_counter
+
 def get_docker_status():
     """
         返回Docker-compose.yaml文件中所有启动的服务，如果服务启动，
@@ -55,6 +73,9 @@ def get_docker_status():
     return 0
 
 def get_device_status():
+    """
+        获取设备状态信息
+    """
     device_status = get_device_status_from_redis()
     for statu in device_status:
         if statu < 0 or statu > 255:
@@ -63,6 +84,9 @@ def get_device_status():
     return device_status
 
 def get_image_status():
+    """
+        获取图片接收延迟信息和图片筛选信息
+    """
     image_status, image_sum, image_delays, image_score = \
           get_image_statistic()
     return image_status, image_sum, image_delays, int(image_score)
@@ -76,21 +100,24 @@ def get_yolov5_result():
     image_time_s, \
     image_time_ms = get_result_from_redis()
     return target, angle_1, angle_2, angle_3, image_time_s, image_time_ms
-    
-def fake_result_from_redis():
-    # 目标1: 类别(0默认 1主体 2帆板); 俯仰角; 偏航角; 置信度
-    target_1 = [0x01, 0.0, 30.0, 90]
-    # 目标2
-    target_2 = [0x02, -30.0, 30.0, 90]  
-    # 目标3
-    target_3 = [0x02, 30.0, 30.0, 90]  
-    return "fake_image.png", target_1, target_2, target_3
 
-"""
-    生成给定长度的随机bytes
-"""
-def generate_random_bytes(length):
-    return os.urandom(length)
+def get_download_status():
+    """
+        从redis中获取文件下载的状态
+        返回：1. 文件下载状态 2. 文件下载进度
+        如果没有文件下载任务时，以上两个数值取0
+    """
+    json_string = get_redis_key(KEY_DOWNLOAD_STATUS)
+    if json_string is None:
+        LOGGER.info("文件下载任务不存在")
+        return 0, 0
+    message = deserialize_msg(json_string)
+    try: 
+        state = message['state']
+        progress = message['progress']
+    except KeyError as e:
+        LOGGER.info("文件下传状态中不存在Key")
+    return state, progress
 
 def generate_incrementing_bytes(length):
     """
@@ -103,31 +130,31 @@ def generate_incrementing_bytes(length):
     bytes: 包含从 0 开始循环递增值的 bytes 对象。
     """
     return bytes([i % 256 for i in range(length)])
-
-fake_string_40_50 = generate_incrementing_bytes(20)
+fake_string_43_48 = generate_incrementing_bytes(14)
 
 """
     UDP 解析和组包 
 """
 def pack_telemeter_packet(c1, c2, ins_code, \
-        time_s, time_ms, \
+        sys_time_s, sys_time_ms, \
         docker_status, \
         target, cabin, panel_1, panel_2, sys_status, \
         image_status, image_sum, image_delays, image_score, \
-        image_time_s, image_time_ms, exposure, win_w, win_h, win_x, win_y):
+        image_time_s, image_time_ms, exposure, win_w, win_h, win_x, win_y, \
+        time_s, download_state, download_progress):
     udp_packet = struct.pack(TELEMETER_UDP_FORMAT, 
-        time_s,             # 1. 组包时间秒
-        time_ms,            # 2. 组包时间毫秒
+        sys_time_s,         # 1. 组包时间秒
+        sys_time_ms,        # 2. 组包时间毫秒
         c1,                 # 3. 输出计数器
         c2,                 # 4. 指令接收计数器
         ins_code,           # 5. 指令接收状态码
-        0x00,               # 6. AI计算机设备状态码(TODO)
+        0x00,               # 6. CPU温度(TODO)
         sys_status[0],      # 7. CPU占用率
         sys_status[1],      # 8. 磁盘占用率
         sys_status[2],      # 9. 内存占用率
         sys_status[3],      # 10. AI计算机功率
         docker_status,      # 11. 软件基础模块运行状态
-        0x00,               # 12. 算法模块运行状态(TODO)
+        0x00,               # 12. 算法模块运行状态(无效)
         image_status,       # 13. 图像接收状态码
         image_delays[0],    # 14. 图像1接收时延
         image_delays[1],    # 15. 图像2接收时延
@@ -155,7 +182,10 @@ def pack_telemeter_packet(c1, c2, ins_code, \
         panel_2[1],         # 37. 右帆板 方位角
         panel_2[2],         # 38. 右帆板 俯仰角
         panel_2[3],         # 39. 右帆板 置信度
-        fake_string_40_50   # 40-50:共20bytes保留字段
+        time_s,             # 40. 上一次收到的星上时秒
+        download_state,     # 41. 文件下行状态值
+        download_progress,  # 42. 文件下行进度值
+        fake_string_43_48   # 43-48:共14bytes保留字段
     )
     return udp_packet
 
@@ -219,9 +249,8 @@ def sync_time():
     next_second = current_time + 1 - (current_time % 1)
     time.sleep(next_second - current_time)
 
-# def main():
-#     result = get_result_from_redis()
-#     print(result)
+def main():
+    get_download_status()
 
-# if __name__=="__main__":
-#     main()
+if __name__=="__main__":
+    main()

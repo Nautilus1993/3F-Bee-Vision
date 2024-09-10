@@ -32,10 +32,10 @@
             "description": "指令状态码"
         },
         {
-            "name": "device_state", 
+            "name": "cpu_temp", 
             "id": 6,
             "type": "uint8",
-            "description": "AI计算机设备状态码"
+            "description": "CPU温度"
         },
         {
             "name": "cpu_usage",
@@ -189,27 +189,40 @@
         {
             "name": "target_3_class",
             "type": "uint8",
-            "description": "右上帆板类别"
+            "description": "右下帆板类别"
         },
         {
             "name": "target_3_horizon",
             "type": "float",
-            "description": "右上帆板方位角"
+            "description": "右下帆板方位角"
         },
         {
             "name": "target_3_vertical",
             "type": "float",
-            "description": "右上帆板俯仰角"
+            "description": "右下帆板俯仰角"
         },
         {
             "name": "target_3_confidence",
             "type": "uint8",
-            "description": "右上帆板置信度"
+            "description": "右下帆板置信度"
+        },{
+            "name": "last_time_s",
+            "type": "uint32",
+            "description": "最近一次星上时秒"
         },
         {
-            "name": "fake_bytes_40-50",
+            "name": "file_download_state",
+            "type": "uint8",
+            "description": "文件下传状态"
+        },{
+            "name": "file_download_progress",
+            "type": "uint8",
+            "description": "文件下传进度"
+        },
+        {
+            "name": "fake_bytes_43-48",
             "type": "string",
-            "length": 20,
+            "length": 14,
             "description": "预留字段填充字符"
         }
     ]
