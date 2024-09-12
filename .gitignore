@@ -1,6 +1,9 @@
 # docker images
 *.tar
 
+# database
+*.db
+
 # log
 *.log
 
