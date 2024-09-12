@@ -1,3 +1,5 @@
+from sklearn.manifold import TSNE
+from sklearn.cluster import KMeans
 import redis
 import time
 import base64
@@ -11,17 +13,8 @@ import queue
 from queue import PriorityQueue  
 import threading
 from multiprocessing import Process
-
-def recv_result(sat_bbox, img_name):
-    # Define the key and list of values
-    key = 'sat_bbox_angle_det'
-    sat_bbox.append(img_name)    # x,y,w,h,p,c,name
-    values = sat_bbox
-    # print(values)
-    # Set the key with the list value
-    conn.delete(key)  # Optional: Delete the key if it already exists
-    conn.rpush(key, *values)
-
+from database import DataStorage
+import pdb
 
 # 初始化log
 logger = logging.getLogger("analyze-log")
@@ -45,12 +38,19 @@ sub = conn.pubsub()
 sub.subscribe("topic.img")
 logger.info("Receiving...")
 
+# 初始化数据库
+db = DataStorage('./data/m3.db')
 
 # query redis
 query = redis.Redis(host='127.0.0.1', port=6379)
 query_sub = query.pubsub()
 query_sub.subscribe("channel.query")
 logger.info('query ready...')
+
+
+# 初始化tsne降维工具
+tsne = TSNE(n_components=3)
+
 
 # evluation of the result
 def eval_result(bbox1, bbox2, bbox3, angle1, angle2, angle3):
@@ -66,6 +66,9 @@ def eval_result(bbox1, bbox2, bbox3, angle1, angle2, angle3):
         
     return 1.0/ mean_conf
 
+
+def tsne_transform(data):
+    return tsne.fit_transform(data)
 
 
 image_dict = {} 
@@ -86,14 +89,14 @@ def producer_img():
             message_data = item['data']
             message_dict = eval(message_data)
             img_name = message_dict['name']
-            # [win_x, win_y] = message_dict['window']
             win_width, win_height = message_dict['win_size'] 
             encoded_img = message_dict['data']
             img_data = base64.b64decode(encoded_img)
             nparr = np.frombuffer(img_data, np.uint8)
-            # img = cv2.imdecode(nparr, 0) # simu send
-            img = np.resize(nparr,(win_height, win_width))
-            
+
+            # img = np.resize(nparr,(win_height, win_width)) # real send 
+            img = cv2.imdecode(nparr, 0) # simu send
+
             image_mutex.acquire()
             image_dict[img_name] = img
             image_mutex.release()
@@ -146,29 +149,56 @@ def consumer_match():
             # logger.info(angle2)
             # logger.info(angle3)
 
+            time_s = name.split('_')[1]
+            time_ms = name.split('_')[2]
+            exposure = name.split('_')[3]
             score = eval_result(bbox1, bbox2, bbox3, angle1, angle2, angle3)
-            # logger.info(f"score: {score}")
-            name = name.replace('.bmp', '.jpg')
-
-            rank_mutex.acquire()
-            rank_q.put((score, name))
-            rank_mutex.release()
-    
-            # backprocess to save the image
             
-            cv2.imwrite(os.path.join('./data', name), img)
-            # logger.info(rank_q.queue)
+            if score > 1000:
+                class_type = 0                  #识别结果无效
+            else:
+                class_type = 1                  #识别结果有效
+
+            db.insert(time_s, time_ms, img.shape[0], img.shape[1], exposure, class_type, score, img)
+            # logger.info(f"score: {score}")
+            logger.info(f"insert {name} into database")
 
         time.sleep(0.1)
 
 
 
+def get_res_by_score(count):
+    #选用有检测结果的图片
+    files = db.queryIDThumbnailByClass(class_type=1)
+    thumbnails = []
+    ids = np.array([])
+    if(len(files) == 0):
+        files = db.queryIDThumbnailByClass(class_type=0)
+    
+    for(file) in files:
+        thumbnail = cv2.imdecode(np.frombuffer(file[1], np.uint8), cv2.IMREAD_COLOR)
+        thumbnail = cv2.resize(thumbnail, (128, 128)).reshape(-1)
+        thumbnails.append(thumbnail)
+        ids = np.append(ids, file[0])
 
+    thumbnails = np.array(thumbnails)
+    points = tsne_transform(thumbnails)
+    kmeans = KMeans(n_clusters=count, random_state=0, n_init='auto').fit(points)
+    labels = kmeans.labels_
+    res = []
+    for i in range(count):
+        query_ids = ids[labels == i]
+        info, data = db.queryByIDSortByScoreLimitByCount(query_ids.tolist(), count=1)
+        res.append(info)
+        cv2.imwrite(f'./tmp/{i}.jpg', data)
+        res.append(f'./tmp/{i}.jpg')
+
+    return res
 
 def process_message(message):
     # message format
     #     message = {
-    #     'count': 4,         # 返回指定数量的图片文件列表
+    #     'count': 3,         # 返回指定数量的图片文件列表
     #     'time_start': 0,    # 图片时间戳区间，预留支持查找某段时间内的最好图片的接口
     #     'time_end': 0,   
     #     'sort': 0,          # 排序规则：默认按置信度排序，保留扩展排序规则的接口
@@ -177,13 +207,13 @@ def process_message(message):
 
     files = None
     message = eval(message)
-    if int(message['sort']) == 0:                                # sort = 0 置信度排序
-        files = top_n_elements(message['count'])            
+    if int(message['sort']) == 0:                               # # 置信度排序
+        files = get_res_by_score(message['count'])          
     elif int(message['sort']) == 1:                              # sort = 1 时间戳排序
-        files = pop_n_elements(message['count'])
+        files = db.queryByScore(message['count'])
 
     response = {
-        'file_path': 'data',
+        'file_path': 'tmp',
         'file_list': files
     } 
     return f'Processed: {response}'
@@ -192,74 +222,16 @@ def process_message(message):
 def handle_message(channel, message):
     response_channel = f"{channel}:response"  # 创建用于发送响应的队列
     response = process_message(message)  # 处理接收到的消息
-    logger.info(response)
+    # logger.info(response)
     query.rpush(response_channel, response)  # 将响应推送到响应队列
 
 
 def query_listening(channel = 'channel.query'):
     while True:
         message = query.blpop(channel)[1]  # 阻塞等待接收消息
-        logger.info(message)
+        # logger.info(message)
         handle_message(channel, message.decode('utf-8'))
 
-
-def top_n_elements(n):
-    temp_list = []
-    top_n = []
-
-    rank_mutex.acquire()
-    for _ in range(n):
-        if not rank_q.empty():
-            item = rank_q.get()
-            top_n.append(item)
-            temp_list.append(item)
-        else:
-            break
-
-    for item in temp_list:
-        rank_q.put(item)
-    rank_mutex.release()
-
-    return top_n
-
-
-def pop_n_elements(n):
-    pop_n_elements = []
-    rank_mutex.acquire()
-    for _ in range(n):
-        if not rank_q.empty():
-            item = rank_q.get()
-            pop_n_elements.append(item)
-        else:
-            break
-    rank_mutex.release()
-
-
-
-def reserve_top_n_elements(n):
-    # open path 'data' and reserve top n elements
-    while True:
-        files = os.listdir('./data')
-        top_n = top_n_elements(n)
-        
-        logger.info('-------------------')
-        #log time as yy mm dd hh mm ss
-        current_time = time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
-        logger.info(f'current time: {current_time}')
-
-        logger.info(f'Top {n} elements:')
-        for i in range(len(top_n)):
-            logger.info(f'top {i+1}: {str(top_n[i])}')
-
-
-        top_n = [item[1] for item in top_n]
-
-
-        for file in files:
-            if file not in top_n:
-                os.remove(os.path.join('./data', file))
-
-        time.sleep(1)
 
 
 def main():
@@ -267,21 +239,15 @@ def main():
     producer_result_thread = threading.Thread(target=producer_result)
     consumer_match_thread = threading.Thread(target=consumer_match)
     query_listening_thread = threading.Thread(target=query_listening)
-    reserve_top_n_elements_thread = threading.Thread(target=reserve_top_n_elements, args=(10,))
 
     producer_img_thread.start()
     producer_result_thread.start()
     consumer_match_thread.start()
     query_listening_thread.start()
-    reserve_top_n_elements_thread.start()
 
     producer_img_thread.join()
     producer_result_thread.join()
     consumer_match_thread.join()
     query_listening_thread.join()
-    reserve_top_n_elements_thread.join()
 
 main()
-
-        
-        

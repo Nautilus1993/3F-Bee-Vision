@@ -19,7 +19,7 @@ def send_message(channel, message):
 try:
     # 尝试执行Redis操作
     message = {
-        'count': 4,         # 返回指定数量的图片文件列表
+        'count': 3,         # 返回指定数量的图片文件列表
         'time_start': 0,    # 图片时间戳区间，预留支持查找某段时间内的最好图片的接口
         'time_end': 0,   
         'sort': 0,          # 排序规则：默认按置信度排序，保留扩展排序规则的接口
