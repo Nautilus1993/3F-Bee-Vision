@@ -96,7 +96,6 @@ def serialize_msg(message):
     """
     try:
         json_string = json.dumps(message)
-        print("Serialized JSON:", json_string)
         return json_string
     except TypeError as e:
         LOGGER.error(f"json序列化失败: {e}")  

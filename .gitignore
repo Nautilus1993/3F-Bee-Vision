@@ -1,5 +1,6 @@
 # docker images
 *.tar
+*.zip
 
 # database
 *.db
