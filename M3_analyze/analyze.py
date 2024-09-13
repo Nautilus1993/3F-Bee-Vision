@@ -80,6 +80,7 @@ image_mutex = threading.Lock()
 result_mutex = threading.Lock()
 rank_mutex = threading.Lock()
 time_mutex = threading.Lock()
+db_mutex = threading.Lock()
 
 
 def producer_img():
@@ -158,8 +159,9 @@ def consumer_match():
                 class_type = 0                  #识别结果无效
             else:
                 class_type = 1                  #识别结果有效
-
+            db_mutex.acquire()
             db.insert(time_s, time_ms, img.shape[0], img.shape[1], exposure, class_type, score, img)
+            db_mutex.release()
             # logger.info(f"score: {score}")
             logger.info(f"insert {name} into database")
 
@@ -169,11 +171,15 @@ def consumer_match():
 
 def get_res_by_score(count):
     #选用有检测结果的图片
+    db_mutex.acquire()
     files = db.queryIDThumbnailByClass(class_type=1)
+    db_mutex.release()
     thumbnails = []
     ids = np.array([])
     if(len(files) == 0):
+        db_mutex.acquire()
         files = db.queryIDThumbnailByClass(class_type=0)
+        db_mutex.release()
     
     for(file) in files:
         thumbnail = cv2.imdecode(np.frombuffer(file[1], np.uint8), cv2.IMREAD_COLOR)
@@ -188,10 +194,12 @@ def get_res_by_score(count):
     res = []
     for i in range(count):
         query_ids = ids[labels == i]
+        db_mutex.acquire()
         info, data = db.queryByIDSortByScoreLimitByCount(query_ids.tolist(), count=1)
-        res.append(info)
-        cv2.imwrite(f'./tmp/{i}.jpg', data)
-        res.append(f'./tmp/{i}.jpg')
+        db_mutex.release()
+        # res.append(info)
+        cv2.imwrite(f'/usr/src/data/tmp/{i}.jpg', data)
+        res.append(f'{i}.jpg')
 
     return res
 
@@ -206,33 +214,40 @@ def process_message(message):
     # }
 
     files = None
-    message = eval(message)
+    # message = eval(message)
+    # 反序列化查询消息
+    try:
+        message = json.loads(message)
+    except json.JSONDecodeError as e:
+        print(f"json反序列化失败: {e}")
+
     if int(message['sort']) == 0:                               # # 置信度排序
         files = get_res_by_score(message['count'])          
     elif int(message['sort']) == 1:                              # sort = 1 时间戳排序
         files = db.queryByScore(message['count'])
-
     response = {
-        'file_path': 'tmp',
+        'file_path': '/usr/src/data/tmp/',
         'file_list': files
     } 
-    return f'Processed: {response}'
+    # 序列化查询结果
+    try:
+        json_string = json.dumps(response)
+        return json_string
+    except TypeError as e:
+        print(f"json序列化失败: {e}") 
+    return None
 
 
 def handle_message(channel, message):
     response_channel = f"{channel}:response"  # 创建用于发送响应的队列
     response = process_message(message)  # 处理接收到的消息
-    # logger.info(response)
     query.rpush(response_channel, response)  # 将响应推送到响应队列
-
 
 def query_listening(channel = 'channel.query'):
     while True:
         message = query.blpop(channel)[1]  # 阻塞等待接收消息
         # logger.info(message)
-        handle_message(channel, message.decode('utf-8'))
-
-
+        handle_message(channel, message)
 
 def main():
     producer_img_thread = threading.Thread(target=producer_img)

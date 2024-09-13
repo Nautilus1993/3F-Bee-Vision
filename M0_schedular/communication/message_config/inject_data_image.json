@@ -51,61 +51,61 @@
         },
         {
             "name": "image_1_time_s", 
-            "type": "uint8",
+            "type": "uint32",
             "id": 9, 
             "description": "图片1时间戳"
         },
         {
             "name": "image_2_time_s", 
-            "type": "uint8",
+            "type": "uint32",
             "id": 10, 
             "description": "图片2时间戳"
         },
         {
             "name": "image_3_time_s", 
-            "type": "uint8",
+            "type": "uint32",
             "id": 11, 
             "description": "图片3时间戳"
         },
         {
             "name": "image_4_time_s", 
-            "type": "uint8",
+            "type": "uint32",
             "id": 12, 
             "description": "图片4时间戳"
         },
         {
             "name": "image_5_time_s", 
-            "type": "uint8",
+            "type": "uint32",
             "id": 13, 
             "description": "图片5时间戳"
         },
         {
             "name": "image_6_time_s", 
-            "type": "uint8",
+            "type": "uint32",
             "id": 14, 
             "description": "图片6时间戳"
         },
         {
             "name": "image_7_time_s", 
-            "type": "uint8",
+            "type": "uint32",
             "id": 15, 
             "description": "图片7时间戳"
         },
         {
             "name": "image_8_time_s", 
-            "type": "uint8",
+            "type": "uint32",
             "id": 16, 
             "description": "图片8时间戳"
         },
         {
             "name": "image_9_time_s", 
-            "type": "uint8",
+            "type": "uint32",
             "id": 17, 
             "description": "图片9时间戳"
         },
         {
             "name": "image_10_time_s", 
-            "type": "uint8",
+            "type": "uint32",
             "id": 18, 
             "description": "图片10时间戳"
         },

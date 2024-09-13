@@ -15,13 +15,14 @@ sys.path.append(script_dir)
 # Add the parent directory to the sys.path list
 from utils.share import LOGGER, IP_ADDRESS
 from file_down_utils import RECV_PORT, DownloadState, \
-    pack_udp_packet, update_download_status
+    pack_udp_packet, update_download_status, \
+    check_and_zip_files
 # from file_down_utils import jpeg2000_encode
 CHUNK_SIZE = 93           # 图片分片长度
-FILE_PATH = "/usr/src/app/remote_control/tmp/output.zip"
+FILE_PATH = "/usr/src/data/tmp/output.zip"
 # FILE_PATH = "/home/ywang/Documents/3F-Bee-Vision/M0_schedular/communication/remote_control/tmp/output.zip"
 
-def send_file_data(file_type, file_data, freq = 50):
+def send_file_data(file_type, file_data, freq = 5):
     """
         发送文件分片并指定分片发送频率(默认每秒发送十个分片)
         输入：
@@ -57,7 +58,7 @@ def send_file_data(file_type, file_data, freq = 50):
         # 更新下载进度到redis
         if progress != cur_progress:
             progress = cur_progress
-            # LOGGER.info(f"UDP分片下传进度{progress}%, 已下传分片数{i}/{chunk_sum}")
+            LOGGER.info(f"UDP分片下传进度{progress}%, 已下传分片数{i}/{chunk_sum}")
             update_download_status(DownloadState.RUNNING.value, progress)
         # 发送每个分片间隔的s
         time.sleep(1 / freq) 
@@ -78,6 +79,13 @@ def send_image_file():
 def main():
     print("download……")
     send_image_file()
+    # file_dir = "/home/ywang/Documents/3F-Bee-Vision/M0_schedular/communication/remote_control/tmp/"
+    # file_names = [
+    #     "image_200_250_0.jpg",
+    #     "image_300_250_0.jpg",
+    #     "image_500_250_0.jpg"
+    # ]
+    # check_and_zip_files(file_dir, file_names)
 
 if __name__ == '__main__':
     main()
