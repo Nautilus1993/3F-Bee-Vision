@@ -3,12 +3,19 @@ import json
 from enum import Enum
 import re
 import time
+import os
 
+import sys
+# 获取当前脚本文件所在的目录路径
+script_dir = os.path.dirname(os.path.abspath(__file__))
+# 获取上级目录路径
+parent_dir = os.path.dirname(script_dir)
+sys.path.append(parent_dir)
+sys.path.append(script_dir)
+from utils.constants import TOPIC_ANGLE, TOPIC_IMAGE_STATUS
 # REDIS
+
 REDIS = redis.Redis(host='127.0.0.1', port=6379)
-TOPIC_RESULT = 'sat_bbox_det'
-TOPIC_ANGLE = 'sat_bbox_angle_det'
-REDIS_8_TOPIC = "topic.image_status"
 
 """
     靶标类别枚举值
@@ -176,7 +183,7 @@ def get_image_statistic(ttl_seconds=5):
         设置消息时限为5s,如果超过5s依然消息依然没有更新，则说明收图程序有问题，返回默认值
     """
     # 读取后立刻清空消息队列
-    message = REDIS.lrange(REDIS_8_TOPIC, 0, 0)
+    message = REDIS.lrange(TOPIC_IMAGE_STATUS, 0, 0)
     
     # 如果还未接收到图片，返回图片未收到状态值，并返回统计信息默认值
     default_statistic = 0xFF, 0, [0, 0, 0, 0], 0
@@ -192,7 +199,7 @@ def get_image_statistic(ttl_seconds=5):
         timestamp = message['timestamp']
         if time.time() - timestamp > ttl_seconds:
             print("Redis中图片接收统计信息已过期！")
-            REDIS.ltrim(REDIS_8_TOPIC, 1, 0)
+            REDIS.ltrim(TOPIC_IMAGE_STATUS, 1, 0)
             return default_statistic
         return image_status, image_sum, image_delays, image_score
     except KeyError:

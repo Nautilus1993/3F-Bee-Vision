@@ -12,8 +12,9 @@ sys.path.append(parent_dir)
 
 # Add the parent directory to the sys.path list
 from communication.utils.share import LOGGER, IP_ADDRESS
-from communication.image.image_utils import RECV_PORT, \
-    pack_udp_packet, crop_image, pack_fake_cameralink_header
+from communication.utils.constants import IP_ADDRESS, PORT_IMAGE_RECEIVE
+from communication.image.image_utils import \
+    pack_udp_packet, pack_fake_cameralink_header
 
 CHUNK_SIZE = 1024           # 图片分片长度
 
@@ -85,7 +86,7 @@ def send_image_data(image_data):
             i, 
             image_chunk
         )
-        sock.sendto(udp_packet, (IP_ADDRESS, RECV_PORT))
+        sock.sendto(udp_packet, (IP_ADDRESS, PORT_IMAGE_RECEIVE))
         sent_chunks += 1
     
     # 输出发送图片结束时的日志：分片数量，文件大小

@@ -16,7 +16,7 @@ sys.path.append(script_dir)
 
 from utils.share import format_udp_packet, LOGGER, \
     get_redis_key, deserialize_msg
-from utils.constants import KEY_DOWNLOAD_STATUS
+from utils.constants import KEY_DOWNLOAD_STATUS, SERVICE_NAMES, SERVICE_IDS
 from remote_control.remote_control_utils import read_instruction_from_redis
 from algorithm_result import get_result_from_redis, get_image_statistic
 from system_usage import get_device_status_from_redis
@@ -24,20 +24,6 @@ from utils.docker_status import DockerComposeManager, get_service_status
 
 # 遥测帧UDP格式
 from message_config.udp_format import TELEMETER_UDP_FORMAT
-
-# 发送端的IP地址和端口号
-SERVER_PORT = 18089
-SEND_IP = '192.168.0.103'    
-
-# 定义服务名称和编号
-SERVICE_NAMES = ['M0_redis', 
-                 'M0_remote_control',
-                 'M0_telemeter', 
-                 'M0_image_receiver',
-                 'M1_quality',
-                 'M2_detect',
-                 'M3_analyze']
-SERVICE_IDS = {name: idx for idx, name in enumerate(SERVICE_NAMES)}
 
 def get_instruction_status():
     """

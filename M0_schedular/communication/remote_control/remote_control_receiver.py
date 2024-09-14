@@ -9,8 +9,9 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(script_dir)
 sys.path.append(parent_dir)
 sys.path.append(script_dir)
-from utils.share import LOGGER, IP_ADDRESS, get_timestamps
-from remote_control_utils import SERVER_PORT, Instruction, InstructionType, \
+from utils.share import LOGGER
+from utils.constants import IP_ADDRESS, PORT_REMOTE_CONTROL
+from remote_control_utils import Instruction, InstructionType, \
     unpack_indirect_instruction_packet, write_instruction_to_redis, execute_indirect_ins, \
     unpack_time_ins_packet, write_time_to_redis, \
     unpack_inject_data_image_packet, execute_inject_data_image_download
@@ -81,8 +82,8 @@ def receive_instruction(buffer_size):
 # 创建UDP套接字
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)    
 # 绑定IP地址和端口号
-sock.bind((IP_ADDRESS, SERVER_PORT))
-LOGGER.info(IP_ADDRESS + " : " + str(SERVER_PORT) + "  开始接收遥控指令...")
+sock.bind((IP_ADDRESS, PORT_REMOTE_CONTROL))
+LOGGER.info(IP_ADDRESS + " : " + str(PORT_REMOTE_CONTROL) + "  开始接收遥控指令...")
 try:
     buffer_size = 1024
     receive_instruction(buffer_size)

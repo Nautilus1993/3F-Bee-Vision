@@ -10,10 +10,11 @@ parent_dir = os.path.dirname(script_dir)
 sys.path.append(parent_dir)
 sys.path.append(script_dir)
 
-from utils.share import LOGGER, IP_ADDRESS
+from utils.share import LOGGER
+from utils.constants import IP_ADDRESS, PORT_IMAGE_RECEIVE
 from image_utils import unpack_udp_packet, unpack_cameralink_header 
 from image_utils import process_image_to_file, process_image_to_redis
-from image_utils import CHUNK_SIZE, HEADER_SIZE, RECV_PORT
+from image_utils import CHUNK_SIZE, HEADER_SIZE
 from image_utils import format_image_udp_packet, format_cameralink_header
 
 def receive_image(buffer_size):
@@ -85,7 +86,7 @@ def receive_image(buffer_size):
 # 创建UDP套接字
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)    
 # 绑定IP地址和端口号
-sock.bind((IP_ADDRESS, RECV_PORT))
+sock.bind((IP_ADDRESS, PORT_IMAGE_RECEIVE))
 
 # 增加退出docker的逻辑
 def signal_handler(sig, frame):
@@ -95,7 +96,7 @@ def signal_handler(sig, frame):
 signal.signal(signal.SIGINT, signal_handler)
 
 while(True):
-    LOGGER.info(IP_ADDRESS + " : " + str(RECV_PORT) + "  开始接收图片...")
+    LOGGER.info(IP_ADDRESS + " : " + str(PORT_IMAGE_RECEIVE) + "  开始接收图片...")
     try:
         # buffer_size: UDP包的大小，每次接收定长的UDP包
         buffer_size = HEADER_SIZE + CHUNK_SIZE

@@ -13,14 +13,10 @@ parent_dir = os.path.dirname(script_dir)
 sys.path.append(parent_dir)
 sys.path.append(script_dir)
 from utils.share import LOGGER, serialize_msg, set_redis_key
-from utils.constants import KEY_DOWNLOAD_STATUS
-
-# 接收端的IP地址和端口号
-RECV_PORT = 18089
+from utils.constants import KEY_DOWNLOAD_STATUS, ZIPFILE_MAXSIZE
 
 # 存储
 REDIS = redis.Redis(host='127.0.0.1', port=6379)
-IMAGE_DIR = os.path.dirname(os.path.abspath(__file__)) + "/received_images/"
 
 # 后面按需替换
 FILE_IMAGE = 0x00 # TODO:图片文件
@@ -29,9 +25,6 @@ FILE_LOG = 0xaa   # TODO:日志文件
 # 数据分片大小
 CHUNK_SIZE = 93
 HEADER_SIZE = 11
-
-# TODO(wangyuhang): 文件压缩包大小上限应改为200KB
-ZIPFILE_MAXSIZE = 1000 * 1024
 
 class DownloadState(Enum):
     """
@@ -113,7 +106,6 @@ def check_and_zip_files(file_dir, file_names):
             zipf.write(file_path, arcname=file)
     LOGGER.info(f"文件压缩完毕：{zip_file_path}")
 
-    # TODO(wangyuhang): 判断压缩后文件大小，如果超过上限值，则更新错误状态到redis
     if os.path.getsize(zip_file_path) > ZIPFILE_MAXSIZE:
         LOGGER.error("压缩后的文件大小超过上限值！")
         update_download_status(DownloadState.FILE_OVERFLOW.value, 0)

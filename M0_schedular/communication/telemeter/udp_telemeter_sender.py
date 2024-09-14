@@ -12,9 +12,8 @@ parent_dir = os.path.dirname(script_dir)
 sys.path.append(parent_dir)
 sys.path.append(script_dir)
 
-from utils.share import LOGGER, IP_ADDRESS, get_timestamps
-
-from telemeter_utils import SERVER_PORT, SEND_IP
+from utils.share import LOGGER, get_timestamps
+from utils.constants import SEND_IP, PORT_TELEMETER
 from telemeter_utils import get_result_from_redis, \
     get_device_status, get_instruction_status, \
     get_image_status, get_docker_status, \
@@ -88,8 +87,8 @@ def packup_telemetering_data(counter):
 def send_udp(counter, interval):
     data = packup_telemetering_data(counter)
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    LOGGER.info(f"向IP {SEND_IP} Port {SERVER_PORT} 发送数据")
-    sock.sendto(data, (SEND_IP, SERVER_PORT))
+    LOGGER.info(f"向IP {SEND_IP} Port {PORT_TELEMETER} 发送数据")
+    sock.sendto(data, (SEND_IP, PORT_TELEMETER))
     # 关闭套接字
     sock.close()
 
