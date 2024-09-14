@@ -19,7 +19,7 @@ from utils.share import format_udp_packet, LOGGER, \
 from utils.constants import KEY_DOWNLOAD_STATUS, SERVICE_NAMES, SERVICE_IDS
 from remote_control.remote_control_utils import read_instruction_from_redis
 from algorithm_result import get_result_from_redis, get_image_statistic
-from system_usage import get_device_status_from_redis
+from system_usage import get_device_status_from_redis, DEFAULT_DEVICE_STATUS
 from utils.docker_status import DockerComposeManager, get_service_status
 
 # 遥测帧UDP格式
@@ -63,10 +63,12 @@ def get_device_status():
         获取设备状态信息
     """
     device_status = get_device_status_from_redis()
+    if len(device_status) != len(DEFAULT_DEVICE_STATUS):
+        return DEFAULT_DEVICE_STATUS
     for statu in device_status:
         if statu < 0 or statu > 255:
             LOGGER.error("system status error: %s", device_status)
-            return [0, 0, 0, 0]
+            return DEFAULT_DEVICE_STATUS
     return device_status
 
 def get_image_status():
@@ -134,11 +136,11 @@ def pack_telemeter_packet(c1, c2, ins_code, \
         c1,                 # 3. 输出计数器
         c2,                 # 4. 指令接收计数器
         ins_code,           # 5. 指令接收状态码
-        0x00,               # 6. CPU温度(TODO)
-        sys_status[0],      # 7. CPU占用率
-        sys_status[1],      # 8. 磁盘占用率
-        sys_status[2],      # 9. 内存占用率
-        sys_status[3],      # 10. AI计算机功率
+        sys_status[0],      # 6. CPU温度
+        sys_status[1],      # 7. CPU占用率
+        sys_status[2],      # 8. 磁盘占用率
+        sys_status[3],      # 9. 内存占用率
+        sys_status[4],      # 10. AI计算机功率
         docker_status,      # 11. 软件基础模块运行状态
         0x00,               # 12. 算法模块运行状态(无效)
         image_status,       # 13. 图像接收状态码
