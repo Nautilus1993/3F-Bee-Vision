@@ -32,7 +32,7 @@ def packup_telemetering_data(counter):
     # 2. 指令状态
     ins_code, ins_counter = get_instruction_status()
     
-    # 3. 获取设备状态[cpu, disk, memory, power]
+    # 3. 获取设备状态[cpu_temp, cpu_usage, disk_usage, memory_usage, power]
     sys_status = get_device_status() 
     
     # 4. yolo识别结果与时间戳
