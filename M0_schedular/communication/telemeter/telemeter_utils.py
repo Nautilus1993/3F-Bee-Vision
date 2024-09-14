@@ -97,7 +97,7 @@ def get_download_status():
     """
     json_string = get_redis_key(KEY_DOWNLOAD_STATUS)
     if json_string is None:
-        LOGGER.info("文件下载任务不存在")
+        # LOGGER.info("文件下载任务不存在")
         return 0, 0
     message = deserialize_msg(json_string)
     try: 
@@ -229,13 +229,16 @@ def single_byte_checksum(data):
     # print(f"数据长度 {len(data)} 校验和: {checksum}")
     return checksum
 
-def sync_time():
+def sync_time(delta=1000):
     """
         同步系统时间，让遥测数据整秒发送
     """
-    current_time = time.time()
-    next_second = current_time + 1 - (current_time % 1)
-    time.sleep(next_second - current_time)
+    # 当前时刻精确到毫秒
+    current_millisecond = int(time.time() * 1000)
+    next_millisecond = current_millisecond + delta - (current_millisecond % delta)
+    # 等待时间秒
+    sleep_time = (next_millisecond - current_millisecond) / 1000
+    time.sleep(sleep_time)
 
 def main():
     get_download_status()

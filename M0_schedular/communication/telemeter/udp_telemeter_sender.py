@@ -79,7 +79,7 @@ def packup_telemetering_data(counter):
         download_progress
     )
     # 打印遥测帧
-    format_telemeter(telemeter_data)
+    # format_telemeter(telemeter_data)
     udp_packet = pack_udp_packet(telemeter_data)    
     return udp_packet
 
@@ -111,7 +111,7 @@ def main():
         # UDP发送
         send_udp(counter, 1)
         counter += 1
-        sync_time()
+        sync_time(500)
 
 if __name__=="__main__":
     main()
