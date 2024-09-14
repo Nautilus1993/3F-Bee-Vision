@@ -4,10 +4,20 @@ import time
 import threading
 import redis
 import json
+import os
+
+import sys
+# 获取当前脚本文件所在的目录路径
+script_dir = os.path.dirname(os.path.abspath(__file__))
+# 获取上级目录路径
+parent_dir = os.path.dirname(script_dir)
+sys.path.append(parent_dir)
+sys.path.append(script_dir)
+from utils.constants import KEY_DEVICE_STATUS
+from utils.share import serialize_msg, deserialize_msg
 
 # REDIS
 REDIS = redis.Redis(host='127.0.0.1', port=6379)
-KEY_DEVICE_STATUS = 'orin_nano_stats'
 
 def get_cpu_usage():
     """获取 CPU 占用率"""
@@ -62,7 +72,7 @@ def send_device_status_to_redis():
             print("系统状态值错误: %s", device_status)
             device_status = [0, 0, 0, 0]
     # 写入 Redis
-    stats_json = json.dumps(device_status)
+    stats_json = serialize_msg(device_status)
     try: 
         REDIS.set(KEY_DEVICE_STATUS, stats_json)
     except redis.ConnectionError:
@@ -73,7 +83,7 @@ def get_device_status_from_redis():
     device_status = REDIS.get(KEY_DEVICE_STATUS)
     if device_status == None:
         return [0,0,0,0]
-    device_status = json.loads(device_status)
+    device_status = deserialize_msg(device_status)
     return device_status
 
 def start_monitor():

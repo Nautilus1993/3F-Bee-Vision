@@ -10,15 +10,12 @@ parent_dir = os.path.dirname(script_dir)
 sys.path.append(parent_dir)
 sys.path.append(script_dir)
 
-from utils.share import LOGGER, IP_ADDRESS
-from file_down_utils import unpack_udp_packet, process_image_to_file, process_image_to_redis, process_file_to_bin
-from file_down_utils import CHUNK_SIZE, HEADER_SIZE, RECV_PORT
+from utils.share import LOGGER
+from utils.constants import IP_ADDRESS, PORT_IMAGE_DOWNLOAD
+from file_down_utils import unpack_udp_packet, process_image_to_file
+from file_down_utils import CHUNK_SIZE, HEADER_SIZE
 from file_down_utils import format_file_udp_packet
 from file_down_utils import FILE_IMAGE, FILE_LOG
-#test
-IP_ADDRESS = '127.0.0.1'
-
-
 
 def receive_file(buffer_size):
     # UDP包缓存：以包序号为key存储UDP包中的有效数据
@@ -96,7 +93,7 @@ def stitching_packets(file_type, received_packets):
 # 创建UDP套接字
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)    
 # 绑定IP地址和端口号
-sock.bind((IP_ADDRESS, RECV_PORT))
+sock.bind((IP_ADDRESS, PORT_IMAGE_DOWNLOAD))
 
 # 增加退出docker的逻辑
 def signal_handler(sig, frame):
@@ -106,7 +103,7 @@ def signal_handler(sig, frame):
 signal.signal(signal.SIGINT, signal_handler)
 
 while(True):
-    LOGGER.info(IP_ADDRESS + " : " + str(RECV_PORT) + "  开始接收图片...")
+    LOGGER.info(IP_ADDRESS + " : " + str(PORT_IMAGE_DOWNLOAD) + "  开始接收图片...")
     try:
         # buffer_size: UDP包的大小，每次接收定长的UDP包
         buffer_size = HEADER_SIZE + CHUNK_SIZE

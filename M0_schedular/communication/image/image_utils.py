@@ -16,20 +16,15 @@ parent_dir = os.path.dirname(script_dir)
 sys.path.append(parent_dir)
 sys.path.append(script_dir)
 from utils.share import LOGGER
-
-# 接收端的IP地址和端口号
-RECV_PORT = 18089
+from utils.constants import TOPIC_IMG_RAW
 
 # 存储
 REDIS = redis.Redis(host='127.0.0.1', port=6379)
 IMAGE_DIR = os.path.dirname(os.path.abspath(__file__)) + "/received_images/"
-TOPIC_IMG_RAW = "topic.raw_img"
-TOPIC_IMG = "topic.img"
 
 # 后面按需替换
 SENDER_DEVICE = 0x00 # TODO:转发板设备ID
 RECV_DEVICE = 0x01   # TODO: AI计算机设备ID
-EXPOSE = 0x03 
 
 # 数据分片大小
 CHUNK_SIZE = 1024

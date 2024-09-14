@@ -9,9 +9,8 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(script_dir)
 sys.path.append(parent_dir)
 sys.path.append(script_dir)
-from utils.share import LOGGER
-from telemeter_utils import SERVER_PORT
-from telemeter_utils import unpack_telemeter_packet
+from communication.utils.share import LOGGER
+from communication.telemeter.telemeter_utils import unpack_telemeter_packet
 
 class UDPTelemeterProtocol(DatagramProtocol):
     def datagramReceived(self, data, addr):
@@ -22,7 +21,7 @@ class UDPTelemeterProtocol(DatagramProtocol):
 
 def main():
     # 启动一个事件循环
-    reactor.listenUDP(SERVER_PORT, UDPTelemeterProtocol())
+    reactor.listenUDP(18089, UDPTelemeterProtocol())
     print('server start')
     reactor.run()
 

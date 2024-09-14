@@ -18,28 +18,19 @@ from utils.docker_status import DockerComposeManager
 from utils.share import LOGGER, get_timestamps, serialize_msg, deserialize_msg
 from download.file_down_utils import check_and_zip_files, \
     DownloadState, update_download_status
-from utils.constants import TOPIC_QUERY
+from utils.constants import TOPIC_INSTRUCTION, TOPIC_TIME, TOPIC_QUERY, \
+    REDIS_QUEUE_MAX_LENGTH, DOWNLOAD_SERVICE_NAME, COMPOSE_FILE
 
 # 加载遥测数据格式配置文件,生成UDP包格式
 from message_config.udp_format import INDIRECT_INS_UDP_FORMAT, \
     TIME_INS_FORMAT, INJECT_DATA_IMAGE_FORMAT
 
-# 接收端的IP地址和端口号
-SERVER_PORT = 17777
-
 # REDIS
 REDIS = redis.Redis(host='127.0.0.1', port=6379)
-TOPIC_INSTRUCTION = 'topic.remote_control'
-BUFFER_SIZE = 10 # redis中最多缓存的指令数量
 
 LENGTH = 9  
 SENDER_ID  = 0x55
 RECEIVER_ID = 0xAA
-
-TOPIC_TIME = 'queue.time' 
-MAX_LENGTH = 10 
-
-DOWNLOAD_SERVICE_NAME = 'file_download'
 
 # =========  指令类型、指令码枚举类定义 =========
 
@@ -151,7 +142,7 @@ def write_time_to_redis(time_s, time_ms):
     json_str = json.dumps(timestamp)
     REDIS.lpush(TOPIC_TIME, json_str)
     # 修剪队列长度
-    REDIS.ltrim(TOPIC_TIME, 0, MAX_LENGTH - 1)
+    REDIS.ltrim(TOPIC_TIME, 0, REDIS_QUEUE_MAX_LENGTH - 1)
 
 def read_time_from_redis():
     """
@@ -334,7 +325,7 @@ def write_instruction_to_redis(instruction, counter):
     print("write to redis" + str(message))
     REDIS.rpush(TOPIC_INSTRUCTION, json.dumps(message))
     # 判断是否已经达到指令缓存数量上限
-    if REDIS.llen(TOPIC_INSTRUCTION) > BUFFER_SIZE:
+    if REDIS.llen(TOPIC_INSTRUCTION) > REDIS_QUEUE_MAX_LENGTH:
         REDIS.lpop(TOPIC_INSTRUCTION)
 
 def read_instruction_from_redis():
@@ -348,9 +339,7 @@ def read_instruction_from_redis():
         return None
 
 # =========  docker compose 相关函数 =========
-# docker container中的docker-compose.yaml文件路径
-compose_file_path = "/usr/src/deploy/docker-compose.yaml"  
-manager = DockerComposeManager(compose_file_path)
+manager = DockerComposeManager(COMPOSE_FILE)
 
 def is_service_running(service_name):
     service_list_names = [container.name for container in manager.get_running_services()]

@@ -2,8 +2,6 @@ import sys
 import socket
 import os
 import time
-from PIL import Image
-import numpy as np
 
 # 获取当前脚本文件所在的目录路径
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -14,13 +12,10 @@ sys.path.append(script_dir)
 
 # Add the parent directory to the sys.path list
 from utils.share import LOGGER, IP_ADDRESS
-from file_down_utils import RECV_PORT, DownloadState, \
-    pack_udp_packet, update_download_status, \
-    check_and_zip_files
-# from file_down_utils import jpeg2000_encode
+from utils.constants import IP_ADDRESS, PORT_IMAGE_DOWNLOAD, DOWNLOAD_FILE
+from file_down_utils import DownloadState, \
+    pack_udp_packet, update_download_status
 CHUNK_SIZE = 93           # 图片分片长度
-FILE_PATH = "/usr/src/data/tmp/output.zip"
-# FILE_PATH = "/home/ywang/Documents/3F-Bee-Vision/M0_schedular/communication/remote_control/tmp/output.zip"
 
 def send_file_data(file_type, file_data, freq = 5):
     """
@@ -52,7 +47,7 @@ def send_file_data(file_type, file_data, freq = 5):
             i,
             file_chunk
         )
-        sock.sendto(udp_packet, (IP_ADDRESS, RECV_PORT))
+        sock.sendto(udp_packet, (IP_ADDRESS, PORT_IMAGE_DOWNLOAD))
         sent_chunks += 1 
         cur_progress = int(i / chunk_sum * 100)
         # 更新下载进度到redis
@@ -71,7 +66,7 @@ def send_file_data(file_type, file_data, freq = 5):
 
 # TODO(wangyuhang):需要增加判断是下载日志还是图片的功能
 def send_image_file():
-    with open(FILE_PATH, 'rb') as file:
+    with open(DOWNLOAD_FILE, 'rb') as file:
         raw_data = file.read()
         print("读取文件成功")
     send_file_data(0x00, raw_data)
