@@ -8,7 +8,7 @@ SEND_IP =  '192.168.0.103'      # 转发板IP
 
 PORT_IMAGE_RECEIVE = 18089      # 原始图片接收端口(本机)
 PORT_TELEMETER = 18089          # 遥测数据发送端口(转发板)
-PORT_IMAGE_DOWNLOAD = 18089     # 文件异步包下行发送端口(转发板)
+PORT_IMAGE_DOWNLOAD = 19090     # 文件异步包下行发送端口(转发板)
 PORT_REMOTE_CONTROL = 17777     # 间接指令、星上时、注入数据和异步包请求接收端口(本机)
 
 # Redis
