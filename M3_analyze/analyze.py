@@ -95,8 +95,8 @@ def producer_img():
             img_data = base64.b64decode(encoded_img)
             nparr = np.frombuffer(img_data, np.uint8)
 
-            # img = np.resize(nparr,(win_height, win_width)) # real send 
-            img = cv2.imdecode(nparr, 0) # simu send
+            img = np.resize(nparr,(win_height, win_width)) # real send 
+            # img = cv2.imdecode(nparr, 0) # simu send
 
             image_mutex.acquire()
             image_dict[img_name] = img
@@ -188,6 +188,29 @@ def get_res_by_score(count):
         ids = np.append(ids, file[0])
 
     thumbnails = np.array(thumbnails)
+<<<<<<< HEAD
+    try:
+        points = tsne_transform(thumbnails)
+        kmeans = KMeans(n_clusters=count, random_state=0, n_init='auto').fit(points)
+        labels = kmeans.labels_
+        res = []
+        for i in range(count):
+            query_ids = ids[labels == i]
+            info, data = db.queryByIDSortByScoreLimitByCount(query_ids.tolist(), count=1)
+            res.append(info)
+            cv2.imwrite(f'./tmp/{i}.jpg', data)
+            res.append(f'./tmp/{i}.jpg')
+    except:
+        res = []
+        for i in range(count):
+            query_ids = ids
+            info, data = db.queryByIDSortByScoreLimitByCount(query_ids.tolist(), count=1)
+            res.append(info)
+            cv2.imwrite(f'/tmp/{i}.jpg', data)
+            res.append(f'./tmp/{i}.jpg')
+
+
+=======
     points = tsne_transform(thumbnails)
     kmeans = KMeans(n_clusters=count, random_state=0, n_init='auto').fit(points)
     labels = kmeans.labels_
@@ -200,6 +223,7 @@ def get_res_by_score(count):
         # res.append(info)
         cv2.imwrite(f'/usr/src/data/tmp/{i}.jpg', data)
         res.append(f'{i}.jpg')
+>>>>>>> 25902b6901d94f77d4215a3ec1f1ca4f1d5deeec
 
     return res
 
