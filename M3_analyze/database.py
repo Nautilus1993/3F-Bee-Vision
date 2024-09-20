@@ -15,7 +15,7 @@ class DataStorage:
         try:
             sql1 = '''
             CREATE TABLE IF NOT EXISTS `info`(
-                `id` VARCHAR(32) PRIMARY KEY,
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT,
                 `time_s` INTEGER UNSIGNED NOT NULL,
                 `time_ms` INTEGER UNSIGNED NOT NULL,
                 `local_time` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -28,7 +28,7 @@ class DataStorage:
             '''
             sql2 = '''
             CREATE TABLE IF NOT EXISTS `source`(
-                `id` VARCHAR(32) PRIMARY KEY,
+                `id` INTEGER PRIMARY KEY,
                 `data` BLOB NOT NULL,
                 `thumbnail` BLOB NOT NULL,
                 FOREIGN KEY(`id`) REFERENCES `info`(`id`) ON DELETE CASCADE ON DELETE CASCADE
@@ -49,7 +49,10 @@ class DataStorage:
         self.cursor.execute(sql)
         self.conn.commit()
     
-    def _insertSource(self, id, data, thumbnail):
+    def _insertSource(self, data, thumbnail):
+        self.cursor.execute('SELECT last_insert_rowid();')
+        id = self.cursor.fetchall()[0][0]
+        print(id)
         self.cursor.execute('INSERT INTO source (id, data, thumbnail) VALUES (?, ?, ?);', (id, data, thumbnail))
         self.conn.commit()
 
@@ -90,9 +93,8 @@ class DataStorage:
         thumbnail = cv2.resize(data, (128, 128))
         thumbnail = cv2.imencode('.jpg', thumbnail)[1].tobytes()
         data = cv2.imencode('.jpg', data)[1].tobytes()
-        id = hashlib.md5(data).hexdigest()
-        self._insertInfo('info', {'id': id, 'time_s': time_s, 'time_ms': time_ms, 'width': width, 'height': height, 'exposure': exposure, 'class': class_type, 'score': score})
-        self._insertSource(id, data, thumbnail)
+        self._insertInfo('info', {'time_s': time_s, 'time_ms': time_ms, 'width': width, 'height': height, 'exposure': exposure, 'class': class_type, 'score': score})
+        self._insertSource(data, thumbnail)
 
     def queryByScore(self, count=3):
         info = self._query('info', ['id', 'time_s', 'time_ms', 'width', 'height', 'exposure', 'class', 'score'], order = 'score', limit=count)
