@@ -1,0 +1,17 @@
+[Unit]
+Description=3f-vision模拟UDP发图
+After=3f_vision_docker.service
+
+[Service]
+EnvironmentFile=/home/ywang/.config/systemd/user/3f_vision.env
+WorkingDirectory=/home/ywang
+ExecStart=/usr/bin/python /home/ywang/Documents/3F-Bee-Vision/M0_schedular/api/udp/udp_img_sender.py
+
+Restart=always
+RestartSec=3
+
+StandardOutput=append:/home/ywang/image_send.log
+StardardError=append:/home/ywang/image_send-error.log
+
+[Install]
+WantedBy=default.target
