@@ -11,7 +11,7 @@ parent_dir = os.path.dirname(os.path.dirname(script_dir))
 sys.path.append(parent_dir)
 
 # Add the parent directory to the sys.path list
-from communication.utils.share import LOGGER, IP_ADDRESS
+from communication.utils.share import LOGGER
 from communication.utils.constants import IP_ADDRESS, PORT_IMAGE_RECEIVE
 from communication.image.image_utils import \
     pack_udp_packet, pack_fake_cameralink_header
@@ -106,7 +106,8 @@ def send_scroll_images():
     # 从图像文件中读取图片
     with open(image_path, 'rb') as file:
         raw_image = file.read()
-    for _ in range(1000):
+    # for _ in range(1000):
+    while True:
         header = fake_cameralink_header(gen, 100, [2048, 2048, 0, 0])
         image_data = header + raw_image
         send_image_data(image_data)

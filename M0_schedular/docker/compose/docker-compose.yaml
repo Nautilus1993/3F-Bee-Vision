@@ -65,7 +65,7 @@ services:
       - $DEVOPS_WORKSPACE:/usr/src/deploy/
   # M1-图片质量评估与筛选
   quality:
-    image: orin_nano_yolov5:20240617
+    image: orin_nano_yolov5:20240912
     runtime: nvidia
     network_mode: "host"
     container_name: M1_quality
@@ -76,7 +76,7 @@ services:
       - $DEVOPS_WORKSPACE/M1/:/usr/src/deploy/
   # M2-部件识别
   yolov5:
-    image: orin_nano_yolov5:20240617
+    image: orin_nano_yolov5:20240912
     runtime: nvidia
     network_mode: "host"
     container_name: M2_detect
