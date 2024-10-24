@@ -4,6 +4,7 @@ import time
 import base64
 import numpy as np
 import os
+import json
 
 # 初始化参数
 n = 4  # 不同曝光图像的数量
@@ -54,9 +55,9 @@ for filename in os.listdir(folder_path):
             'delay': 0,  # 暂时设置为0
             'data': encoded_img
         }
-
+        json_str = json.dumps(message)
         # 发送消息
-        conn.publish("topic.img", str(message))
+        conn.publish("topic.img", json_str)
 
         # 等待一定时间间隔
         time.sleep(interval)
