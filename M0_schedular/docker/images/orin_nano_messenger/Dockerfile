@@ -5,6 +5,7 @@ RUN apt update && apt install -y python3.8 python3-pip
 COPY requirements.txt /tmp/requirements.txt
 RUN pip3 install -r /tmp/requirements.txt
 # 注意python jtop的版本需要和host保持一致
+RUN pip3 install --upgrade setuptools
 RUN pip3 install -U jetson-stats==4.2.9
 
 # 安装docker compose plugin
