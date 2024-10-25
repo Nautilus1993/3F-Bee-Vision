@@ -29,7 +29,7 @@ def adjust_brightness(image, value):
 for filename in os.listdir(folder_path):
     print(filename)
     image_path = os.path.join(folder_path, filename)
-    img = cv2.imread(image_path)
+    img = cv2.imread(image_path, 0)
     time_s += 1
     
     # 生成不同曝光的图像
@@ -37,8 +37,7 @@ for filename in os.listdir(folder_path):
         adjusted_img = adjust_brightness(img, exposure_value[i])
 
         # 将图像转换为二进制流
-        _, buffer = cv2.imencode('.bmp', adjusted_img)
-        img_data = buffer.tobytes()
+        img_data = adjusted_img.tobytes()
 
         # 编码
         encoded_img = base64.b64encode(img_data).decode('utf-8')
