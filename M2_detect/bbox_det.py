@@ -272,7 +272,7 @@ def main():
                     start_time = time.time()
                     # 收到图像数据解析
                     message_data = item['data']
-                    message_dict = eval(message_data)  # Convert the string message back to a dictionary
+                    message_dict = json.loads(message_data)  # Convert the string message back to a dictionary
 
                     """message info:
                     message = {
@@ -293,6 +293,7 @@ def main():
                     img = np.resize(nparr,(win_height, win_width))  # received is small img   #TODO confirm x y order
                     # img = cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)
                     # img = cv2.imdecode(nparr, 0) 
+                    cv2.imwrite('received_img.jpg', img)
                     win_img = img
                     up_left_corner = [win_y, win_x]   # 开窗的左上角在原图中的坐标, 行 列 坐标
                     
@@ -306,7 +307,7 @@ def main():
                         boxed_img = draw_boxes(img, sat_bboxes, (1024, 1024))
                         # cv2.imshow('image with boxes', boxed_img)
                         # cv2.waitKey(0)
-                        cv2.imwrite('output.jpg', boxed_img)
+                        # cv2.imwrite('output.jpg', boxed_img)
                         # cv2.destroyAllWindows()
 
                     # 计算方位角和俯仰角
