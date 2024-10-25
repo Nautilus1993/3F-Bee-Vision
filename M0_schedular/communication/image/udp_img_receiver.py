@@ -46,7 +46,7 @@ def receive_image(buffer_size):
             
             # 打印cameralink帧头内容
             cameralink_header = image_chunk[:29]
-            # format_cameralink_header(cameralink_header)
+            format_cameralink_header(cameralink_header)
             time_s, time_ms, exposure, win_w, win_h, win_x, win_y \
                 = unpack_cameralink_header(cameralink_header)
             # 若缓存非空，说明上一张图片未收全

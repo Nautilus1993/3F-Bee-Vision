@@ -5,6 +5,7 @@ import time
 import base64
 import cv2
 import numpy as np
+import json
 
 # 连接redis
 REDIS = redis.Redis(host='127.0.0.1', port=6379)
@@ -25,8 +26,8 @@ try:
         'sort': 0,          # 排序规则：默认按置信度排序，保留扩展排序规则的接口
         'source': 0,        # 载荷编号：保留扩展到多个载荷的接口 
     }
-
-    send_message(CHANNEL, str(message))   # send
+    json_msg = json.dumps(message)
+    send_message(CHANNEL, json_msg)   # send
 
 except ConnectionError as ce:
     print("无法连接到Redis服务器:" + str(ce))
