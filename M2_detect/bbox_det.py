@@ -12,6 +12,7 @@ import logging
 from logging import handlers
 import base64
 import json
+import copy
 
 
 def trans_bbox_format(single_bbox, result_w, result_h, img_w, img_h):
@@ -151,13 +152,9 @@ def inference(img_grey):
                     result_bbox[1] = sorted_D_panel[1]
                     result_bbox[2] = sorted_D_panel[0]
             elif len(sorted_D_panel) == 1:
-                # compare panel with cabin center
-                if sorted_D_panel[0][0] <= result_bbox[0][0]:
-                    result_bbox[1] = sorted_D_panel[0]
-                    result_bbox[2] = [0, 0, 0, 0, 0, 0]
-                else:
-                    result_bbox[1] = [0, 0, 0, 0, 0, 0]
-                    result_bbox[2] = sorted_D_panel[0]
+                # put left panel position
+                result_bbox[1] = sorted_D_panel[0]
+                result_bbox[2] = [0, 0, 0, 0, 0, 0]
             elif len(sorted_D_panel) == 0:
                 result_bbox[1] = [0, 0, 0, 0, 0, 0]
                 result_bbox[2] = [0, 0, 0, 0, 0, 0]
@@ -169,26 +166,22 @@ def inference(img_grey):
 
     return result_bbox
 
-def pos2angle(bbox, left_up_corner, camera_center):
+def pos2angle(bbox, camera_center):
     """
     Args:
         bbox = [[], [], []]
-        left_up_corner
+        up_left_corner
         camera_center
     Output: angles = [[pitch, yaw], [], []]
     """
     sat_angle_boxes = []
     for sat_bbox in bbox:
-        # 得到检测框中心在全图中的坐标
+        # 得到检测框中心在全图中的坐标，行h，列w
         sat_bbox_center = [sat_bbox[1]+sat_bbox[3]/2, sat_bbox[0]+sat_bbox[2]/2] 
 
-        # 计算检测框中心坐标在全图中的坐标
-        # sat_bbox_center[0] = sat_bbox_center[0] + left_up_corner[0]
-        # sat_bbox_center[1] = sat_bbox_center[1] + left_up_corner[1]
-
         # 计算相机中心与检测框中心的偏移角度
-        dh = camera_center[0] - sat_bbox_center[0]  # h方向偏移量，大于0仰视
-        dw = sat_bbox_center[1] - camera_center[1]  # w方向偏移量，大于0右侧
+        dh = sat_bbox_center[0] - camera_center[1]  # h方向偏移量，低头为正
+        dw = camera_center[0] - sat_bbox_center[1]  # w方向偏移量，左偏为正
 
         angle_pitch = np.arctan(dh/fl) * 180 / np.pi    # 俯仰角，俯视为负， -90~90
         angle_yaw = np.arctan(dw/fl) * 180 / np.pi  # 方位角，左侧为负， -180~180
@@ -200,25 +193,32 @@ def pos2angle(bbox, left_up_corner, camera_center):
     return sat_angle_boxes
 
 
-def pub_result(sat_bboxes, sat_angle_boxes, img_name):
+def pub_result(sat_bboxes, sat_angle_boxes, img_name, window_info):
     # Define the key and list of values
     """
+    REDIS-2示例：
     sat_bbox = {'bbox1':0,
             'angle1':0,
             'bbox2':0,
             'angle2':0,
             'bbox3':0,
             'angle3':0,
-            'name':0}
+            'name':"image_1000_300_2050.bmp",
+            'window_info': [2048,2048,0,0]}
     """
     key = 'sat_bbox_angle_det'
+    # 开窗信息合法性判断
+    if len(window_info) != 4:
+        logger.error(f"开窗信息长度有误：{window_info}")
+        window_info = [-1, -1, -1, -1]
     result = {'bbox1':sat_bboxes[0],
         'angle1':sat_angle_boxes[0],
         'bbox2':sat_bboxes[1],
         'angle2':sat_angle_boxes[1],
         'bbox3':sat_bboxes[2],
         'angle3':sat_angle_boxes[2],
-        'name':img_name}
+        'name':img_name,
+        'window_info': window_info}  
     serialized_result = json.dumps(result)
     
     # Set the key with the list value
@@ -230,9 +230,9 @@ def pub_result(sat_bboxes, sat_angle_boxes, img_name):
 # config
 weights = os.path.dirname(os.path.realpath(__file__)) + "/pt/best.pt"
 fl = 4648.540   # camera focal length
-camera_center = [1024, 1024]    # 原图大小：2048*2048
+camera_center = [1004.19, 1054.44]    # 光心标定 X_0 Y_0
 img_size = 2048
-visualization = 0    # 0不可视化，1可视化
+visualization = 1    # 0不可视化，1可视化
 device = select_device('')
 model = attempt_load(weights, device=device)
 output_dir = 'output/'
@@ -243,7 +243,7 @@ logger.setLevel(logging.DEBUG)
 log_file = "det.log"
 # 设置日志文件大小在3M时截断
 # 最多保留1个日志备份
-fh = handlers.RotatingFileHandler(filename=log_file, maxBytes=3000000, backupCount=1)
+fh = handlers.RotatingFileHandler(filename=log_file, maxBytes=30000000, backupCount=1)
 formatter = logging.Formatter('%(asctime)s %(message)s')
 # 输出到文件
 fh.setFormatter(formatter)
@@ -272,52 +272,61 @@ def main():
                     start_time = time.time()
                     # 收到图像数据解析
                     message_data = item['data']
-                    message_dict = eval(message_data)  # Convert the string message back to a dictionary
+                    message_dict = json.loads(message_data)  # Convert the string message back to a dictionary
 
                     """message info:
                     message = {
                         'name': image_name,
-                        'win_size': (2048, 2048),
+                        'win_size': (win_width, win_height),
                         'window': [win_x, win_y],
                         'data': encoded_img
                     }
                     """
                     img_name = message_dict['name']
-                    win_width, win_height = message_dict['win_size']    # message_dict好像没有win_size这个属性，因此下面用了定值
-                    [win_x, win_y] = message_dict['window']   # 开窗坐标系以左下角为原点
+                    win_width, win_height = message_dict['win_size']
+                    [win_x, win_y] = message_dict['window']   # 开窗坐标系以左上角为原点，往右为X，往下为Y
                     encoded_img = message_dict['data']
+
+                    # 图像解析
                     img_data = base64.b64decode(encoded_img)
                     nparr = np.frombuffer(img_data, np.uint8)
-                    img = np.resize(nparr,(img_size, img_size))
+                    img = np.resize(nparr,(win_height, win_width))  # received is small img   #TODO confirm x y order
+                    # img = cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)
                     # img = cv2.imdecode(nparr, 0) 
-
-                    # 根据窗口大小裁剪图像
-                    win_img = img[img_size - win_y - win_height: img_size - win_y, win_x: win_x + win_width]
-                    left_up_corner = [img_size - win_y - win_height, win_x]   # 开窗的左上角在原图中的坐标
+                    cv2.imwrite('received_img.jpg', img)
+                    win_img = img
+                    up_left_corner = [win_y, win_x]   # 开窗的左上角在原图中的坐标, 行 列 坐标
                     
                     # 得到检测边界框数组
                     sat_bboxes = inference(win_img)    # [[x,y,w,h,p,c], [x,y,w,h,p,c], [x,y,w,h,p,c]]
 
-                    for i in range(len(sat_bboxes)):
-                        sat_bboxes[i][0] += left_up_corner[1]
-                        sat_bboxes[i][1] += left_up_corner[0]
-                    sat_angle_boxes = pos2angle(sat_bboxes, left_up_corner, camera_center)
-
                     # visualization
+                    # 写在计算方位角和俯仰角下面的话需要用一个新的变量，并且深拷贝sat_bboxes，tql zzy
                     if visualization:
                         print('saving...')
-                        boxed_img = draw_boxes(img, sat_bboxes, (512, 512))
-                        cv2.imshow('image with boxes', boxed_img)
-                        cv2.waitKey(0)
-                        cv2.imwrite('output.jpg', boxed_img)
-                        cv2.destroyAllWindows()
-                    
-                    pub_result(sat_bboxes, sat_angle_boxes, img_name)    # pub by redis key sat_angle_det, category, angle_pitch, angle_azimuth, p, name
+                        boxed_img = draw_boxes(img, sat_bboxes, (1024, 1024))
+                        # cv2.imshow('image with boxes', boxed_img)
+                        # cv2.waitKey(0)
+                        # cv2.imwrite('output.jpg', boxed_img)
+                        # cv2.destroyAllWindows()
+
+                    # 计算方位角和俯仰角
+                    for i in range(len(sat_bboxes)):
+                        sat_bboxes[i][0] += up_left_corner[1]
+                        sat_bboxes[i][1] += up_left_corner[0]
+                    sat_angle_boxes = pos2angle(sat_bboxes, camera_center)
+
+                    # 开窗信息
+                    window_info = [win_width, win_height, win_x, win_y]
+
+                    # 发送结果
+                    pub_result(sat_bboxes, sat_angle_boxes, img_name, window_info)    # pub by redis key sat_angle_det, category, angle_pitch, angle_azimuth, p, name
                     
                     # 日志记录检测框和耗时
-                    
+                    logger.info('img_name: {}'.format(img_name))
                     logger.info('angle_bbox: {}'.format(sat_angle_boxes))
                     logger.info("sat_bbox: {}".format(sat_bboxes))
+                    logger.info("window_info: P{}".format(window_info))
                     logger.info("time_consuming: {:.4f} s".format(time.time()-start_time))
         except Exception as e:
             print(e)   

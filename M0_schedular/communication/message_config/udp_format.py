@@ -12,19 +12,22 @@ sys.path.append(parent_dir)
 from utils.share import generate_udp_format
 
 # 加载遥测数据格式配置文件,生成UDP包格式
-telemeter_config_file = script_dir + "/telemeter_config.json"
-TELEMETER_UDP_FORMAT = generate_udp_format(telemeter_config_file)
+TELEMETER_UDP_FORMAT = generate_udp_format(script_dir + "/telemeter_config.json")
 
 # 加载图像包格式配置文件,生成UDP包格式
-image_config_file = script_dir + "/image_config.json"
-IMAGE_UDP_FORMAT = generate_udp_format(image_config_file)
+IMAGE_UDP_FORMAT = generate_udp_format(script_dir + "/image_config.json")
 # 加载cameralink包头格式配置文件，生成UDP包格式
-cameralink_config_file = script_dir + "/cameralink_config.json"
-CAMERALINK_HEADER_FORMAT = generate_udp_format(cameralink_config_file)
+CAMERALINK_HEADER_FORMAT = generate_udp_format(script_dir + "/cameralink_config.json")
 
 # 加载间接指令配置文件,生成UDP包格式
-indirect_ins_config_file = script_dir + "/indirect_ins_config.json"
-INDIRECT_INS_UDP_FORMAT = generate_udp_format(indirect_ins_config_file)
+INDIRECT_INS_UDP_FORMAT = generate_udp_format(script_dir + "/indirect_ins_config.json")
 
-time_ins_config_file = script_dir + "/time_ins_config.json"
-TIME_INS_FORMAT = generate_udp_format(indirect_ins_config_file)
+# 加载星上时配置文件,生成UDP包格式
+TIME_INS_FORMAT = generate_udp_format(script_dir + "/time_ins_config.json")
+
+# 生成UDP包格式
+INJECT_DATA_IMAGE_FORMAT = generate_udp_format(script_dir + "/inject_data_image.json")
+
+# 加载文件低速下行异步包配置文件,生成UDP包格式
+file_down_config_file = script_dir + "/file_down_config.json"
+FILE_DOWN_FORMAT = generate_udp_format(file_down_config_file)

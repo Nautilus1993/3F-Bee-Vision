@@ -32,10 +32,10 @@
             "description": "指令状态码"
         },
         {
-            "name": "device_state", 
+            "name": "cpu_temp", 
             "id": 6,
             "type": "uint8",
-            "description": "AI计算机设备状态码"
+            "description": "CPU温度"
         },
         {
             "name": "cpu_usage",
@@ -62,10 +62,84 @@
             "description": "AI计算机功率"
         }, 
         {
-            "name": "fake_bytes_11-26",
-            "type": "string",
-            "length": 30,
-            "description": "填充字符"
+            "name": "software_state",
+            "type": "uint8",
+            "description": "软件基础模块运行状态"
+        },
+        {
+            "name": "algorithm_state",
+            "type": "uint8",
+            "description": "算法模块运行状态"
+        },
+        {
+            "name": "image_receiver_state",
+            "type": "uint8",
+            "description": "图像接收状态码"
+        },
+        {
+            "name": "delay_image1",
+            "type": "uint16",
+            "description": "图像1接收时延"
+        },
+        {
+            "name": "delay_image2",
+            "type": "uint16",
+            "description": "图像2接收时延"
+        },
+        {
+            "name": "delay_image3",
+            "type": "uint16",
+            "description": "图像3接收时延"
+        },   
+        {
+            "name": "delay_image4",
+            "type": "uint16",
+            "description": "图像4接收时延"
+        },
+        {
+            "name": "select_image_sum",
+            "type": "uint8",
+            "description": "筛选图像总数"
+        },
+        {
+            "name": "quality_score",
+            "type": "uint16",
+            "description": "当前识别图像质量指标（亮度）"
+        },
+        {
+            "name": "image_time_s",
+            "type": "uint32",
+            "description": "当前识别图像时间戳秒"
+        },
+        {
+            "name": "image_time_ms",
+            "type": "uint16",
+            "description": "当前识别图像时间戳毫秒"
+        },
+        {
+            "name": "exposure_time",
+            "type": "uint16",
+            "description": "当前识别图像曝光时长"
+        },
+        {
+            "name": "win_w",
+            "type": "uint16",
+            "description": "当前识别图像开窗宽度w"
+        },
+        {
+            "name": "win_h",
+            "type": "uint16",
+            "description": "当前识别图像开窗高度h"
+        },
+        {
+            "name": "win_x",
+            "type": "uint16",
+            "description": "当前识别图像开窗位置x"
+        },
+        {
+            "name": "win_y",
+            "type": "uint16",
+            "description": "当前识别图像开窗位置y"
         },
         {
             "name": "target_1_class",
@@ -115,27 +189,40 @@
         {
             "name": "target_3_class",
             "type": "uint8",
-            "description": "右上帆板类别"
+            "description": "右下帆板类别"
         },
         {
             "name": "target_3_horizon",
             "type": "float",
-            "description": "右上帆板方位角"
+            "description": "右下帆板方位角"
         },
         {
             "name": "target_3_vertical",
             "type": "float",
-            "description": "右上帆板俯仰角"
+            "description": "右下帆板俯仰角"
         },
         {
             "name": "target_3_confidence",
             "type": "uint8",
-            "description": "右上帆板置信度"
+            "description": "右下帆板置信度"
+        },{
+            "name": "last_time_s",
+            "type": "uint32",
+            "description": "最近一次星上时秒"
         },
         {
-            "name": "fake_bytes_40-50",
+            "name": "file_download_state",
+            "type": "uint8",
+            "description": "文件下传状态"
+        },{
+            "name": "file_download_progress",
+            "type": "uint8",
+            "description": "文件下传进度"
+        },
+        {
+            "name": "fake_bytes_43-48",
             "type": "string",
-            "length": 20,
+            "length": 14,
             "description": "预留字段填充字符"
         }
     ]

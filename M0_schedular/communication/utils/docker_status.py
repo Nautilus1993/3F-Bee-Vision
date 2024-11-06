@@ -54,7 +54,7 @@ class DockerComposeManager:
         containers = client.containers.list()
         # 返回和docker-compose.yaml定义的project相关的容器实例列表
         filtered_containers = list(filter(lambda c: 
-            c.labels.get('com.docker.compose.project') == '3f-vision', 
+            c.labels.get('com.docker.compose.project') == COMPOSE_PROJECT, 
             containers))
         return filtered_containers
 
@@ -65,8 +65,7 @@ class DockerComposeManager:
         :return: docker compose服务列表
         """
         try:
-            print("============")
-            print(self.compose_file_path)
+            # print(self.compose_file_path)
             docker_compose_config = subprocess.run(
                 ["docker", "compose", "-f", self.compose_file_path, "config", "--services"],
                 cwd=os.path.dirname(self.compose_file_path),
@@ -92,6 +91,28 @@ class DockerComposeManager:
                 return False
         return True
 # 使用示例
+
+def get_service_status(manager, service_list, service_ids):
+    running_services = manager.get_running_services()
+    service_names = [service.name for service in running_services]
+    status_bits = 0
+    for service in service_list:
+        if service in service_names:
+            # # 将对应的 bit 置为 1  
+            status_bits |= (1 << service_ids[service])
+    # 返回一个长度为 16 的 bytes
+    return status_bits.to_bytes(2, byteorder='big')
+
+# 定义服务名称和编号
+SERVICE_NAMES = ['M0_redis', 
+                 'M0_remote_control',
+                 'M0_telemeter', 
+                 'M0_image_receiver',
+                 'M1_quality',
+                 'M2_detect',
+                 'M3_analyze']
+SERVICE_IDS = {name: idx for idx, name in enumerate(SERVICE_NAMES)}
+
 if __name__ == "__main__":
     if 'DEVOPS_WORKSPACE' in os.environ:
         compose_file_path = os.environ['DEVOPS_WORKSPACE'] + "/docker-compose.yaml"
@@ -104,4 +125,5 @@ if __name__ == "__main__":
     services_list = ['redis', 'remote_control','telemeter']
     services_list_2 = ['image_receiver', 'yolov5','quality']
     # manager.start_services(services_list)
-    manager.stop_services(services_list_2)
+    # manager.stop_services(services_list_2)
+    status_bits = get_service_status(manager, SERVICE_NAMES, SERVICE_IDS)

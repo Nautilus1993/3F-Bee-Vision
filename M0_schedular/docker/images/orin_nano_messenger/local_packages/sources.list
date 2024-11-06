@@ -1,0 +1,1 @@
+deb [trusted=yes] file:///local_packages/deb_packages ./

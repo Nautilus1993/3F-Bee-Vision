@@ -1,8 +1,15 @@
 # docker images
 *.tar
+*.zip
+
+# database
+*.db
 
 # log
 *.log
+
+# python wheel
+*.whl
 
 # M1 quality evaluation results
 result.txt 

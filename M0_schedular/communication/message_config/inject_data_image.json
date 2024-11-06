@@ -1,0 +1,125 @@
+{
+    "schema": "Telemeter",
+    "fields": [
+        {
+            "name": "effect_length", 
+            "type": "uint16",
+            "id": 1, 
+            "description": "数据长度"
+        },
+        {
+            "name": "sender_id", 
+            "type": "uint8",
+            "id": 2, 
+            "description": "数据发送方"
+        },
+        {
+            "name": "receiver_id", 
+            "type": "uint8",
+            "id": 3, 
+            "description": "数据接收方"
+        },
+        {
+            "name": "instruction_type", 
+            "type": "uint8",
+            "id": 4, 
+            "description": "数据类型"
+        },
+        {
+            "name": "ins_wait_time", 
+            "type": "uint32",
+            "id": 5, 
+            "description": "指令时间码"
+        },
+        {
+            "name": "ins_code", 
+            "type": "uint8",
+            "id": 6, 
+            "description": "指令类型码"
+        },
+        {
+            "name": "download_strategy", 
+            "type": "uint8",
+            "id": 7, 
+            "description": "下行图片数量"
+        },
+        {
+            "name": "download_strategy", 
+            "type": "uint8",
+            "id": 8, 
+            "description": "下行图片策略"
+        },
+        {
+            "name": "image_1_time_s", 
+            "type": "uint32",
+            "id": 9, 
+            "description": "图片1时间戳"
+        },
+        {
+            "name": "image_2_time_s", 
+            "type": "uint32",
+            "id": 10, 
+            "description": "图片2时间戳"
+        },
+        {
+            "name": "image_3_time_s", 
+            "type": "uint32",
+            "id": 11, 
+            "description": "图片3时间戳"
+        },
+        {
+            "name": "image_4_time_s", 
+            "type": "uint32",
+            "id": 12, 
+            "description": "图片4时间戳"
+        },
+        {
+            "name": "image_5_time_s", 
+            "type": "uint32",
+            "id": 13, 
+            "description": "图片5时间戳"
+        },
+        {
+            "name": "image_6_time_s", 
+            "type": "uint32",
+            "id": 14, 
+            "description": "图片6时间戳"
+        },
+        {
+            "name": "image_7_time_s", 
+            "type": "uint32",
+            "id": 15, 
+            "description": "图片7时间戳"
+        },
+        {
+            "name": "image_8_time_s", 
+            "type": "uint32",
+            "id": 16, 
+            "description": "图片8时间戳"
+        },
+        {
+            "name": "image_9_time_s", 
+            "type": "uint32",
+            "id": 17, 
+            "description": "图片9时间戳"
+        },
+        {
+            "name": "image_10_time_s", 
+            "type": "uint32",
+            "id": 18, 
+            "description": "图片10时间戳"
+        },
+        {
+            "name": "checksum", 
+            "type": "uint16",
+            "id": 19, 
+            "description": "校验和"
+        },
+        {
+            "name": "frame_end", 
+            "type": "uint16",
+            "id": 20, 
+            "description": "帧尾"
+        }
+    ]
+}
