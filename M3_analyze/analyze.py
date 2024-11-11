@@ -232,6 +232,7 @@ def process_message(message):
         'file_path': '/usr/src/data/tmp/',
         'file_list': files
     } 
+    logger.info("发送查询结果: " +response)
     # 序列化查询结果
     try:
         json_string = json.dumps(response)
@@ -249,7 +250,7 @@ def handle_message(channel, message):
 def query_listening(channel = 'channel.query'):
     while True:
         message = query.blpop(channel)[1]  # 阻塞等待接收消息
-        # logger.info(message)
+        logger.info("收到查询请求: " + message)
         handle_message(channel, message)
 
 def main():
