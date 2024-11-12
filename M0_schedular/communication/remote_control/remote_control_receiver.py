@@ -13,8 +13,8 @@ from utils.share import LOGGER
 from utils.constants import IP_ADDRESS, PORT_REMOTE_CONTROL
 from remote_control_utils import Instruction, InstructionType, \
     unpack_indirect_instruction_packet, write_instruction_to_redis, execute_indirect_ins, \
-    unpack_time_ins_packet, write_time_to_redis, \
-    unpack_inject_data_image_packet, execute_inject_data_image_download
+    unpack_time_ins_packet, write_time_to_redis
+from image_download_utils import unpack_inject_data_image_packet, execute_inject_data_image_download
 
 
 def receive_instruction(buffer_size):
