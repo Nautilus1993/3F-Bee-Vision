@@ -226,15 +226,16 @@ def get_res_by_timestamp(time_stamp_list):
 
 # define enum of status
 class Status:
+    NORMAL = 0x00
     COUNT_INVALID = 0x01
     SORT_INVALID = 0x02
-    TIMESTAMP_DUPLICATE = 0x04
-    TIMESTAMP_COUNT_NOT_MATCH = 0x08
-    COUNT_NONEXIST = 0x10
-    SORT_NONEXIST = 0x20
-    TIMESTAMP_NONEXIST = 0x40
-    COUNT_EXCEED = 0x80
-    JSON_DECODE_ERROR = 0x100
+    TIMESTAMP_DUPLICATE = 0x03
+    TIMESTAMP_COUNT_NOT_MATCH = 0x04
+    COUNT_NONEXIST = 0x05
+    SORT_NONEXIST = 0x06
+    TIMESTAMP_NONEXIST = 0x07
+    COUNT_EXCEED = 0x08
+    JSON_DECODE_ERROR = 0x09
 
 
 
@@ -253,45 +254,43 @@ def process_message(message):
     files = None
     # message = eval(message)
     # 反序列化查询消息
-    status = 0x00
+    status = Status.NORMAL
 
     try:
         message = json.loads(message)
     except json.JSONDecodeError as e:
-        status |= Status.JSON_DECODE_ERROR
+        status = Status.JSON_DECODE_ERROR
         print(f"json反序列化失败: {e}")
 
     if('count' not in message):                                  #缺少count参数
         logger.info("缺少count参数")
-        status |= Status.COUNT_NONEXIST
-    if('sort' not in message):                                   #缺少sort参数
+        status = Status.COUNT_NONEXIST
+    elif('sort' not in message):                                   #缺少sort参数
         logger.info("缺少sort参数")
-        status |= Status.SORT_NONEXIST
-
-    if('timestamps' not in message):                             #缺少timestamps参数
+        status = Status.SORT_NONEXIST
+    elif('timestamps' not in message):                             #缺少timestamps参数
         logger.info("缺少timestamps参数")
-        status |= Status.TIMESTAMP_NONEXIST
-
-    if('count' in message and message['count'] > 10):                                   #count参数不合法
+        status = Status.TIMESTAMP_NONEXIST
+    elif('count' in message and message['count'] > 10):                                   #count参数不合法
         logger.info(f'count参数不合法: count={message['count']}')
-        status |= Status.COUNT_INVALID
+        status = Status.COUNT_INVALID
 
     files = None
-    if(status == 0x00):
+    if(status == Status.NORMAL):
         if int(message['sort']) == 0:                                #sort = 0 置信度排序
             files = get_res_by_score(message['count'])          
         elif int(message['sort']) == 2:                              #sort = 2 时间戳排序
             if(len(message['timestamps']) != message['count']):       #时间戳个数和count不一致
                 logger.info(f'时间戳个数和count不一致: count={message['count']}, timestamps={message['timestamps']}')
-                status |= Status.TIMESTAMP_COUNT_NOT_MATCH
-            
-            if(len(message['timestamps']) != len(set(message['timestamps']))):  #重复的时间戳
+                status = Status.TIMESTAMP_COUNT_NOT_MATCH
+            elif(len(message['timestamps']) != len(set(message['timestamps']))):  #重复的时间戳
                 logger.info(f'重复的时间戳: timestamps={message['timestamps']}')
-                status |= Status.TIMESTAMP_DUPLICATE
-            files = get_res_by_timestamp(message['timestamps'])
+                status = Status.TIMESTAMP_DUPLICATE
+            if(status == Status.NORMAL):
+                files = get_res_by_timestamp(message['timestamps'])
         else:                                                        #sort参数不合法
             logger.info(f'sort参数不合法: sort={message['sort']}')
-            status |= Status.SORT_INVALID
+            status = Status.SORT_INVALID
 
     response = {
         'status': status,
