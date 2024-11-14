@@ -241,6 +241,41 @@ class Status:
 
 
 
+
+def get_res_by_timestamp(time_stamp_list):
+    db_mutex.acquire()
+    info, data = db.queryByTimeStamp(time_stamp_list)
+    db_mutex.release()
+
+    try:
+        res = []
+        for i in range(len(info)):
+            cv2.imwrite(f'/usr/src/data/tmp/{i}.jpg', data[i])
+            res.append(f'{i}.jpg')
+    except:
+        pass
+    
+    return res
+
+
+
+# define enum of status
+class Status:
+    NORMAL = 0x00
+    COUNT_INVALID = 0x01
+    SORT_INVALID = 0x02
+    TIMESTAMP_DUPLICATE = 0x03
+    TIMESTAMP_COUNT_NOT_MATCH = 0x04
+    COUNT_NONEXIST = 0x05
+    SORT_NONEXIST = 0x06
+    TIMESTAMP_NONEXIST = 0x07
+    COUNT_EXCEED = 0x08
+    JSON_DECODE_ERROR = 0x09
+
+
+
+
+
 def process_message(message):
     # message format
     #     message = {
@@ -256,9 +291,12 @@ def process_message(message):
     # 反序列化查询消息
     status = Status.NORMAL
 
+    status = Status.NORMAL
+
     try:
         message = json.loads(message)
     except json.JSONDecodeError as e:
+        status = Status.JSON_DECODE_ERROR
         status = Status.JSON_DECODE_ERROR
         print(f"json反序列化失败: {e}")
 
@@ -295,6 +333,7 @@ def process_message(message):
 
     response = {
         'status': status,
+        'status': status,
         'file_path': '/usr/src/data/tmp/',
         'file_list': files
     } 
@@ -304,6 +343,8 @@ def process_message(message):
         json_string = json.dumps(response)
         return json_string
     except TypeError as e:
+        print(f"json序列化失败: {e}")
+
         print(f"json序列化失败: {e}")
 
     return None
