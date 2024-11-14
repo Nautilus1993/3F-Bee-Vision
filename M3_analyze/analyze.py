@@ -272,7 +272,8 @@ def process_message(message):
         logger.info("缺少timestamps参数")
         status = Status.TIMESTAMP_NONEXIST
     elif('count' in message and message['count'] > 10):                                   #count参数不合法
-        logger.info(f'count参数不合法: count={message['count']}')
+        count = message['count']
+        logger.info(f'count参数不合法: count={count}')
         status = Status.COUNT_INVALID
 
     files = None
@@ -281,15 +282,15 @@ def process_message(message):
             files = get_res_by_score(message['count'])          
         elif int(message['sort']) == 2:                              #sort = 2 时间戳排序
             if(len(message['timestamps']) != message['count']):       #时间戳个数和count不一致
-                logger.info(f'时间戳个数和count不一致: count={message['count']}, timestamps={message['timestamps']}')
+                logger.info(f'时间戳个数和count不一致: count={message["count"]}, timestamps={message["timestamps"]}')
                 status = Status.TIMESTAMP_COUNT_NOT_MATCH
             elif(len(message['timestamps']) != len(set(message['timestamps']))):  #重复的时间戳
-                logger.info(f'重复的时间戳: timestamps={message['timestamps']}')
+                logger.info(f"重复的时间戳: timestamps={message['timestamps']}")
                 status = Status.TIMESTAMP_DUPLICATE
             if(status == Status.NORMAL):
                 files = get_res_by_timestamp(message['timestamps'])
         else:                                                        #sort参数不合法
-            logger.info(f'sort参数不合法: sort={message['sort']}')
+            logger.info(f"sort参数不合法: sort={message['sort']}")
             status = Status.SORT_INVALID
 
     response = {

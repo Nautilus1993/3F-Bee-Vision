@@ -128,15 +128,15 @@ class DataStorage:
     def queryByTimeStamp(self, time_stamp_list):
         info = self._query('info', ['id', 'time_s', 'time_ms', 'width', 'height', 'exposure', 'class', 'score'], \
                            condition=f'time_s in {time_stamp_list}'.replace('[','(').replace(']',')'), limit= len(time_stamp_list))
-        res = []
+        response = []
         for res in info:
             id = res[0]
             data = self._query('source', ['data'], f'id = \'{id}\'')
             data = np.frombuffer(data[0][0], np.uint8)
             data = cv2.imdecode(data, cv2.IMREAD_COLOR)
-            res.append(data)
+            response.append(data)
 
-        return info, res
+        return info, response
 
 # # invoke once
 def init_database():
