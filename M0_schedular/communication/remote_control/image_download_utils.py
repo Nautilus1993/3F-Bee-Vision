@@ -97,7 +97,6 @@ def query_images_by_time(download_image_num, timestamps):
         查询M3: 按照时间戳查询图片
     """
     LOGGER.info(f"按时间戳下载{download_image_num}张图片，正在查询...")
-    # TODO(wangyuhang)查询redis-6接口，获取图片路径和图片名称
     redis_query = {
         'count': download_image_num,         # 返回指定数量的图片文件列表
         'time_start': 0,    # 图片时间戳区间，预留支持查找某段时间内的最好图片的接口
@@ -160,16 +159,19 @@ def execute_inject_data_image_download(
     REDIS.rpush(TOPIC_QUERY, json_string)  # 将消息推送到指定的队列
     
     # 2. 解析查询结果
-    # TODO(wangyuhang):增加判断query_status的逻辑
     LOGGER.info("已发送查询请求，等待相应...")
     response = REDIS.blpop(response_channel, timeout=10)[1]  # 阻塞等待接收响应消息
     response = deserialize_msg(response)
     LOGGER.info(f"收到查询结果: {response}")
     # 增加判断查询结果状态码的判断, 如果数据库查询异常，则返回对应状态值;注意读取字典的异常处理
-    query_status = 0 # response['query_status']
-    file_path = response['file_path']
-    file_list = response['file_list']
+    query_status = response['status']
+    if query_status == 0:
+        file_path = response['file_path']
+        file_list = response['file_list']
+    else:
+        update_download_status(query_status, 0)
+        return
 
-    # 3. 确认图片文件存在并copy到临时存储区，并生成.zip文件,然后开启下载服务
+        # 3. 确认图片文件存在并copy到临时存储区，并生成.zip文件,然后开启下载服务
     if check_and_zip_files(file_path, file_list):
         start_download_service()

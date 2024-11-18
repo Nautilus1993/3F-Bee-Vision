@@ -42,5 +42,6 @@ DOWNLOAD_PATH = "/usr/src/data/tmp/" # 模块间共享数据在容器中的映�
 DOWNLOAD_FILE = "/usr/src/data/tmp/output.zip" # 下载文件和日志时的读取路径
 
 # 阈值常量
-ZIPFILE_MAXSIZE = 1000 * 1024    # 下载文件.zip的最大上限，改为200KB
+ZIPFILE_MAXSIZE = 2000 * 1024    # 下载文件.zip的最大上限，改为200KB
 REDIS_QUEUE_MAX_LENGTH = 10      # redis队列最大长度
+LOSS_TOLERANCE = 0.1             # 丢包率最大值
