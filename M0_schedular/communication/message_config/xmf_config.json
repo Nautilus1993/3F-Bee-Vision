@@ -1,0 +1,59 @@
+{
+    "schema": "Telemeter",
+    "fields": [
+        {
+            "name": "frame_header", 
+            "id": 1,
+            "type": "uint16",
+            "description": "帧头"
+        },
+        {
+            "name": "data_length", 
+            "id": 2,
+            "type": "uint16",
+            "description": "数据长度"
+        },
+        {
+            "name": "data_type", 
+            "id": 3,
+            "type": "uint8",
+            "description": "数据类型"
+        },
+        {
+            "name": "time_s", 
+            "id": 4,
+            "type": "uint32",
+            "description": "组包时间戳秒"
+        },
+        {
+            "name": "time_ms",
+            "id": 5,
+            "type": "uint16",
+            "description": "组包时间戳毫秒"
+        },
+        {
+            "name": "counter_telemeter", 
+            "id": 6,
+            "type": "uint8",
+            "description": "输出计数器"
+        },
+        {
+            "name": "fake_bytes_7-22",
+            "type": "string",
+            "length": 31,
+            "description": "预留字段填充字符"
+        },
+        {
+            "name": "checksum", 
+            "id": 23,
+            "type": "uint16",
+            "description": "校验和"
+        },
+        {
+            "name": "帧尾", 
+            "id": 24,
+            "type": "uint16",
+            "description": "frame_end"
+        }
+    ]
+}
