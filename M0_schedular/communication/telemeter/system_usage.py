@@ -26,10 +26,14 @@ def get_cpu_usage():
 
 def get_disk_usage():
     """获取磁盘占用率"""
-    disk_usage = shutil.disk_usage("/")
-    used = disk_usage.used
-    total = disk_usage.total
-    return (used / total) * 100
+    statvfs = os.statvfs('/')
+    # 总容量（字节） 
+    total = statvfs.f_blocks * statvfs.f_frsize
+    # 已用容量（字节）
+    used = (statvfs.f_blocks - statvfs.f_bfree) * statvfs.f_frsize
+    usage = (used / total) * 100
+    return usage
+
 
 def get_memory_usage():
     """获取内存占用率"""
@@ -38,28 +42,21 @@ def get_memory_usage():
     total = memory.total
     return (used / total) * 100
 
-def get_power_usage():
-    """获取实时功率和CPU温度
-    注意:这需要额外的硬件支持,如果没有相关硬件,则无法获取此数据
-    """
-    # 使用第三方库获取实时功率数据
-    try:
-        from jtop import jtop
-        with jtop() as jetson:
-            total_power =  int(jetson.stats['Power TOT']) / 100
-            temp_cpu = int(jetson.stats['Temp CPU']) % 100
-            return int(total_power), int(temp_cpu) 
-    except ImportError:
-        print("请先安装 jtop 库: pip install jtop")
-    except Exception as e:
-        print("获取实时功率失败:", e)
-    return 0, 0
+def get_cpu_temp_from_sysfs():
+    temp_file = "/sys/class/thermal/thermal_zone0/temp"
+    if os.path.isfile(temp_file):
+        with open(temp_file, 'r') as f:
+            temp = int(f.read()) / 1000
+            return temp
+    else:
+        return None
 
 def collect_system_status():
     disk_usage = int(get_disk_usage())
     cpu_usage = int(get_cpu_usage())
     memory_usage = int(get_memory_usage())
-    power_usage, cpu_temp = get_power_usage()
+    power_usage = 0                             # TODO：保留数据占位
+    cpu_temp = get_cpu_temp_from_sysfs()
     sys_status = [cpu_temp, cpu_usage, memory_usage, disk_usage, power_usage]
     return sys_status
 
