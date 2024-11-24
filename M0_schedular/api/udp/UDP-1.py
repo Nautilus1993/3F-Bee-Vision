@@ -7,6 +7,7 @@ import cv2
 import struct
 import json
 import asyncio
+import random
 script_dir = os.path.dirname(os.path.abspath(__file__))
 # from utlis.share import LOGGER, IP_ADDRESS
 # from utlis.image_utils import pack_udp_packet
@@ -368,7 +369,7 @@ def format_udp_packet(packet, format_string, json_str):
                 format_string += f"{field_info}:\t{value[:20]} ...总长度 {len(value)}\n"
     print(format_string)
 
-def send_image(filename, server_ip, server_port, chunk_size, exposure_time, window_x, window_y, pos_x, pos_y):
+def send_image(filename, server_ip, server_port, chunk_size, exposure_time, window_x, window_y, pos_x, pos_y, loss_rate):
     # 创建UDP套接字
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
@@ -407,6 +408,10 @@ def send_image(filename, server_ip, server_port, chunk_size, exposure_time, wind
             pos_x,
             pos_y
         )
+        # 模拟丢包
+        if random.random() < loss_rate:
+            LOGGER.info(f"丢包：{i}")
+            continue
         sock.sendto(udp_packet, (server_ip, server_port))
         sent_chunks += 1
         time.sleep(0.0000001)
@@ -431,20 +436,20 @@ def crop_image(img, window_x, window_y, pos_x, pos_y):
     return img[pos_y:pos_y + window_y, pos_x:pos_x + window_x]
 
 
-async def begin_send_images(send_freq, window_width, window_height, pos_x, pos_y):
+async def begin_send_images(send_freq, window_width, window_height, pos_x, pos_y, loss_rate):
     idx = 0
     while idx < send_freq:
         
-        send_image(exposure_img_names[idx], IP_ADDRESS, SEND_PORT, CHUNK_SIZE, exposure_time[idx], window_width, window_height, pos_x, pos_y)
+        send_image(exposure_img_names[idx], IP_ADDRESS, SEND_PORT, CHUNK_SIZE, exposure_time[idx], window_width, window_height, pos_x, pos_y, loss_rate)
         #idx = (idx + 1) % len(exposures)
         idx += 1
         await asyncio.sleep(1 / send_freq)
 
 
-def udp_1(filename='xingmin.jpg', send_freq = 4, window_width=512, window_height=512, pos_x = 50, pos_y = 150):
+def udp_1(filename='xingmin.jpg', send_freq = 4, window_width=512, window_height=512, pos_x = 50, pos_y = 150, loss_rate = 0.0):
     generate_four_exposure_images(filename, window_width, window_height, pos_x, pos_y)
     first_frame_time = time.time()
-    asyncio.run(begin_send_images(send_freq, window_width, window_height, pos_x, pos_y))
+    asyncio.run(begin_send_images(send_freq, window_width, window_height, pos_x, pos_y, loss_rate))
 
 
 if __name__ == "__main__":
@@ -453,4 +458,4 @@ if __name__ == "__main__":
     for filename in os.listdir(folder_path):
         print(filename)
         image_path = os.path.join(folder_path, filename)
-        udp_1(image_path, send_freq = 4, window_width=2048, window_height=2048, pos_x = 0, pos_y = 0) 
+        udp_1(image_path, send_freq = 4, window_width=2048, window_height=2048, pos_x = 0, pos_y = 0, loss_rate = 0.0)

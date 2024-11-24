@@ -199,7 +199,10 @@ def get_res_by_score(count):
             info, data = db.queryByIDSortByScoreLimitByCount(query_ids.tolist(), count=1)
             db_mutex.release()
             # res.append(info)
-            cv2.imwrite(f'/usr/src/data/tmp/{i}.jpg', data)
+            data = cv2.cvtColor(data, cv2.COLOR_BGR2GRAY)
+            data = cv2.resize(data, (1024, 1024))
+            compress_param = [cv2.IMWRITE_JPEG_QUALITY, 50]
+            cv2.imwrite(f'/usr/src/data/tmp/{i}.jpg', data, compress_param)
             res.append(f'{i}.jpg')
     except:
         pass
